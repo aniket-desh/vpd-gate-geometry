@@ -48,10 +48,12 @@ def run(cfg: AnalysisConfig) -> dict[str, Any]:
 
     print(f"[vpd-gate-geometry] backend={cfg.backend} output_dir={out}", flush=True)
 
+    n_batches_extracted: int | None = None
     if cfg.load_gate_matrix:
         cached = torch.load(cfg.load_gate_matrix, weights_only=False)
         gm = cached["gm"]
         modules = cached["modules"]
+        n_batches_extracted = cached.get("n_batches")
         print(f"[vpd-gate-geometry] loaded cached gate matrix from "
               f"{cfg.load_gate_matrix} G={tuple(gm.G.shape)}", flush=True)
     else:
@@ -61,12 +63,14 @@ def run(cfg: AnalysisConfig) -> dict[str, Any]:
         print(f"[vpd-gate-geometry] {len(batches)} batches, "
               f"modules={modules}", flush=True)
         gm = gm_mod.build_gate_matrix(batches, modules=modules)
+        n_batches_extracted = len(batches)
         print(f"[vpd-gate-geometry] gate matrix: G={tuple(gm.G.shape)} "
               f"N_rows={gm.n_rows} C_total={gm.n_components}", flush=True)
         if cfg.cache_gate_matrix:
             from pathlib import Path as _P
             _P(cfg.cache_gate_matrix).parent.mkdir(parents=True, exist_ok=True)
-            torch.save({"gm": gm, "modules": modules}, cfg.cache_gate_matrix)
+            torch.save({"gm": gm, "modules": modules, "n_batches": n_batches_extracted},
+                       cfg.cache_gate_matrix)
             print(f"[vpd-gate-geometry] cached gate matrix -> "
                   f"{cfg.cache_gate_matrix}", flush=True)
 
@@ -152,7 +156,7 @@ def run(cfg: AnalysisConfig) -> dict[str, Any]:
 
     summary: dict[str, Any] = {
         "backend": cfg.backend,
-        "n_batches": len(batches),
+        "n_batches": n_batches_extracted,
         "modules": modules,
         "module_a": module_a,
         "module_b": module_b,
