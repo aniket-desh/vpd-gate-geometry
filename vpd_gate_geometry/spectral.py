@@ -103,15 +103,19 @@ def participation_ratio(eigvals: torch.Tensor, eps: float = 1e-12) -> float:
 
 
 def spectral_embedding(
-    K: torch.Tensor, dim: int = 2
+    K: torch.Tensor, dim: int = 2, device: str | None = None
 ) -> torch.Tensor:
     """Top-`dim` eigenvectors scaled by sqrt(eigenvalue)."""
-    eigvals, eigvecs = spectral_decompose(K, k=dim)
+    auto_device = device or ("cuda" if torch.cuda.is_available() else "cpu")
+    eigvals, eigvecs = spectral_decompose(K, k=dim, device=auto_device)
     return eigvecs * eigvals.clamp_min(0).sqrt()[None, :]
 
 
 def cluster_order_from_kernel(
-    K: torch.Tensor, n_clusters: int = 8, max_n_for_agglom: int = 1024
+    K: torch.Tensor,
+    n_clusters: int = 8,
+    max_n_for_agglom: int = 1024,
+    device: str | None = None,
 ) -> torch.Tensor:
     """Permutation that groups similar components together.
 
@@ -123,10 +127,15 @@ def cluster_order_from_kernel(
           sign-clustered top eigenvector and then by mean activity.
           This still produces a clean block layout in the heatmap
           while staying linear in n.
+
+    The internal eigendecomposition for the spectral fallback is
+    routed to `device` (default cuda if available) — eigh on a
+    4096×4096 fp32 matrix is ~9 min on CPU, ~1 s on H200.
     """
     n = K.shape[0]
+    auto_device = device or ("cuda" if torch.cuda.is_available() else "cpu")
     if n > max_n_for_agglom:
-        eigvals, eigvecs = spectral_decompose(K, k=min(8, n))
+        eigvals, eigvecs = spectral_decompose(K, k=min(8, n), device=auto_device)
         # Quantize the top eigenvectors into buckets, then sort lex.
         v1 = eigvecs[:, 0]
         v2 = eigvecs[:, 1] if eigvecs.shape[1] > 1 else torch.zeros_like(v1)

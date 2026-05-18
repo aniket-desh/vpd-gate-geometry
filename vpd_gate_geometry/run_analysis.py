@@ -108,7 +108,9 @@ def run(cfg: AnalysisConfig) -> dict[str, Any]:
     eigvals_raw, _ = spectral.spectral_decompose(K_raw, device=work_device)
     eff_rank_raw = spectral.effective_rank(eigvals_raw)
     pr_raw = spectral.participation_ratio(eigvals_raw)
-    order = spectral.cluster_order_from_kernel(K_raw, n_clusters=min(8, gm_top.n_components // 4 + 1))
+    order = spectral.cluster_order_from_kernel(
+        K_raw, n_clusters=min(8, gm_top.n_components // 4 + 1), device=work_device
+    )
     embed = spectral.spectral_embedding(K_raw, dim=2)
 
     baseline = residualize.fit_token_baseline(
