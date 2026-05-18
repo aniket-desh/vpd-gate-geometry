@@ -79,7 +79,7 @@ def run(cfg: AnalysisConfig) -> dict[str, Any]:
     print(f"[vpd-gate-geometry] alive={int(alive_keep.sum().item())} "
           f"kernel C={gm_top.n_components}", flush=True)
 
-    K_raw = spectral.cosine_kernel(gm_top.G)
+    K_raw = spectral.cosine_kernel_gpu(gm_top.G, device=cfg.device)
     eigvals_raw, _ = spectral.spectral_decompose(K_raw)
     eff_rank_raw = spectral.effective_rank(eigvals_raw)
     pr_raw = spectral.participation_ratio(eigvals_raw)
@@ -95,7 +95,7 @@ def run(cfg: AnalysisConfig) -> dict[str, Any]:
     )
     G_resid = residualize.residualize_gates(gm_top.G, gm_top.token_ids, baseline)
     r2 = residualize.explained_variance_by_token(gm_top.G, G_resid)
-    K_resid = spectral.cosine_kernel(G_resid)
+    K_resid = spectral.cosine_kernel_gpu(G_resid, device=cfg.device)
     eigvals_resid, _ = spectral.spectral_decompose(K_resid)
 
     # Lagged kernel: prefer user-specified pair, otherwise default to a
