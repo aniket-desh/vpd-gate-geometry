@@ -1,0 +1,98 @@
+# vpd-gate-geometry
+
+Spectral / tensor geometry of the VPD causal-importance gate field
+`g[layer, batch, token, component] ∈ [0, 1]` from Goodfire's
+[`param-decomp`](https://github.com/goodfire-ai/param-decomp)
+(VPD paper, April 2026).
+
+This is not a reimplementation. It's a small analysis pipeline that
+treats the gate field as a first-class object and runs a few linear
+baselines on it: same-position kernel + spectrum, token-identity
+residualization, and lagged cross-position kernels.
+
+## Results
+
+See **[`docs/results.md`](docs/results.md)** for the full quantitative
+write-up on the canonical paper run (`goodfire/spd/runs/s-55ea3f9b`).
+
+Headlines, on 65,536 token positions from the canonical Pile stream:
+
+- **Raw kernel is highly structured.** Top eigenvalue 206; effective
+  rank 940 out of a top-4096 alive subset.
+- **Most components are not lexical.** Median per-component R²
+  explained by token identity is 0.06; distribution is
+  bimodal-with-tail.
+- **Lagged cross-position structure is real.** All four same-layer
+  Q/K pairs peak at τ < 0 (attention reaching back to earlier
+  source positions); peak τ* deepens from −2 (L0,L1) to −3 (L2,L3).
+- **Layer/module geometries vary by orders of magnitude.** L1 attn.k
+  has 46 alive components in 5.5 effective dimensions; L3 mlp.down
+  has 1,837 alive in 434 dimensions.
+
+Plots live under [`outputs/gate_geometry/`](outputs/gate_geometry).
+
+## Quick start
+
+```bash
+# 1. Clone scaffold + setup
+git clone https://github.com/aniket-desh/vpd-gate-geometry.git
+cd vpd-gate-geometry
+git clone --depth 1 https://github.com/goodfire-ai/param-decomp.git external/param-decomp
+cd external/param-decomp && uv sync && cd ../..
+
+# 2. Download canonical VPD model + target LM
+#    (public W&B project: signed-GCS URLs work without an API key)
+#    See "Reproducibility" section in docs/results.md for exact URLs.
+
+# 3. Mock smoke test — no real data, just validates the pipeline
+uv run python -m vpd_gate_geometry.run_analysis \
+    --backend mock \
+    --output-dir outputs/gate_geometry/mock_smoke
+
+# 4. Real analysis on the canonical run
+external/param-decomp/.venv/bin/python -m vpd_gate_geometry.run_analysis \
+    --backend repo \
+    --run-path runs/pile-4L/model_400000.pth \
+    --target-model-path runs/pretrain-4L/files/model_step_99999.pt \
+    --cache-gate-matrix outputs/gate_geometry/cache/pile4L.pt \
+    --output-dir outputs/gate_geometry/pile4L_v1 \
+    --n-batches 16 --batch-size 8 \
+    --max-components 4096 --max-lag 6 \
+    --lagged-top-k 512 \
+    --device cuda
+```
+
+## Layout
+
+```
+vpd_gate_geometry/        analysis package
+  config.py               AnalysisConfig + CLI parsing
+  extract_gates.py        GateBatch + mock|repo|artifact backends
+  gate_matrix.py          ComponentKey + GateMatrix + flatten
+  spectral.py             alive filter, GPU cosine kernel, eigvals
+  residualize.py          token-identity baseline + R²
+  lagged.py               Pearson r per τ, GPU-resident accumulation
+  plotting.py             Goodfire-style palette + 8 plot helpers
+  run_analysis.py         end-to-end CLI
+  per_layer.py            per-(layer,module) spectrum comparison
+  sweep_pairs.py          lagged-coimportance over many module pairs
+
+docs/
+  theory.md               theoretical framing (LessWrong target)
+  code.md                 codebase plan
+  writing.md              citations + style
+  repo_readiness_report.md  environment + extraction path
+  external_repos.md       SPD/CLT/BAE links + status
+  results.md              quantitative results
+
+outputs/gate_geometry/    summary.json + plots (gate dumps gitignored)
+```
+
+## Hardware
+
+Designed for a single H200 (144 GB VRAM). The whole pipeline keeps
+the gate matrix on GPU and routes cosine kernel + eigendecomp +
+lagged-cross-product to CUDA. One end-to-end main analysis on
+65,536 token positions is ~50s; the 10-pair lagged sweep is ~50s.
+The 9.6 GB gate matrix is the bottleneck and is cached to disk after
+first extraction (~13 min, mostly HF tokenization + forward passes).
