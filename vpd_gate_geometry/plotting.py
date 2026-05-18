@@ -30,9 +30,11 @@ from matplotlib.colors import LinearSegmentedColormap  # noqa: E402
 PALETTE: dict[str, str] = {
     "raw":       "#6840E0",   # Goodfire-ish indigo / violet
     "residual":  "#1FB6A7",   # teal counterpoint
+    "pearson":   "#1FB6A7",   # alias for the centered-kernel curve
     "token":     "#FF8C42",   # warm orange (lexical)
     "lagged":    "#43B581",   # mid green
     "baseline":  "#9B9B9B",   # neutral mid-gray
+    "null":      "#9B9B9B",   # alias for shuffled-null curves
     "highlight": "#E94F64",   # accent red, used sparingly
     "ink":       "#2C2A35",   # primary text
     "muted":     "#6C6873",   # secondary text
@@ -42,15 +44,18 @@ PALETTE: dict[str, str] = {
 }
 
 # Diverging colormap matching the violet/orange accent pair.
+# The midpoint is a soft cool gray, *not* white, so zero-valued cells stay
+# distinguishable from the warm off-white figure background (PALETTE["bg"]).
 DIVERGING_CMAP = LinearSegmentedColormap.from_list(
     "vpd_diverging",
-    [PALETTE["raw"], "#FFFFFF", PALETTE["token"]],
+    ["#3A1F8A", PALETTE["raw"], "#D8D4E8", PALETTE["token"], "#9E4A1F"],
     N=256,
 )
-# Sequential heatmap colormap: white -> violet.
+# Sequential heatmap / scatter colormap: low end is a pale-but-not-white
+# lavender so the lowest-value points stay visible on the off-white canvas.
 SEQUENTIAL_CMAP = LinearSegmentedColormap.from_list(
     "vpd_sequential",
-    ["#FFFFFF", "#E8E0FF", PALETTE["raw"], "#3A1F8A"],
+    ["#E2DCF2", "#C7B8EE", PALETTE["raw"], "#3A1F8A"],
     N=256,
 )
 
@@ -136,12 +141,23 @@ def plot_spectrum(
     title: str = "Co-importance kernel eigenspectrum",
     extra: dict[str, torch.Tensor] | None = None,
     annotation: str | None = None,
+    label_palette: dict[str, str] | None = None,
 ) -> None:
+    """Spectrum line plot. `extra` maps legend-label -> eigenvalue array.
+
+    `label_palette` optionally maps legend-label -> PALETTE key so the legend
+    can show a human-readable name (e.g. "Pearson (centered)") while the
+    curve uses the colour intended for that kernel variant.
+    """
     fig, ax = plt.subplots(figsize=(6.0, 3.6))
-    ax.plot(_to_np(eigvals), color=PALETTE["raw"], lw=1.8, label="raw", zorder=3)
+    raw_color = PALETTE.get(
+        (label_palette or {}).get("raw", "raw"), PALETTE["raw"]
+    )
+    ax.plot(_to_np(eigvals), color=raw_color, lw=1.8, label="raw", zorder=3)
     if extra is not None:
         for name, vals in extra.items():
-            ax.plot(_to_np(vals), color=PALETTE.get(name, PALETTE["muted"]),
+            palette_key = (label_palette or {}).get(name, name)
+            ax.plot(_to_np(vals), color=PALETTE.get(palette_key, PALETTE["muted"]),
                     lw=1.8, label=name, zorder=3)
         ax.legend(loc="upper right", borderpad=0.4)
     ax.set_xlabel("eigenvalue index")
@@ -192,9 +208,19 @@ def plot_spectral_embedding(
     fig, ax = plt.subplots(figsize=(5.0, 4.6))
     xy = _to_np(coords)
     c = _to_np(color) if color is not None else None
+    # log-scale the colour mapping so the very common low-activity points
+    # don't all collapse to a single colormap bin; clamp the floor to a
+    # small positive so a `Normalize` with vmin>0 stays well-defined.
+    norm = None
+    if c is not None and np.all(c >= 0):
+        import matplotlib.colors as mcolors
+        eps = max(float(np.percentile(c[c > 0], 1)) if (c > 0).any() else 1e-6, 1e-6)
+        norm = mcolors.LogNorm(vmin=eps, vmax=max(c.max(), eps * 10))
     sc = ax.scatter(
-        xy[:, 0], xy[:, 1], c=c, cmap=SEQUENTIAL_CMAP, s=14, alpha=0.9,
-        edgecolor="white", linewidth=0.3,
+        xy[:, 0], xy[:, 1],
+        c=c, cmap=SEQUENTIAL_CMAP, norm=norm,
+        s=18, alpha=0.92,
+        edgecolor=PALETTE["ink"], linewidth=0.25,
     )
     if c is not None:
         cb = fig.colorbar(sc, ax=ax, fraction=0.046, pad=0.04, label="mean gate g̅")
@@ -318,22 +344,43 @@ def plot_lag_profile_with_null(
     save_close(fig, out_path)
 
 
+def _shorten_component_key(key: str) -> str:
+    """`h.2.attn.q_proj#245` -> `L2.attn.q#245`."""
+    import re as _re
+    m = _re.match(r"h\.(\d+)\.(attn|mlp)\.([a-z_]+)#(\d+)", key)
+    if not m:
+        return key
+    layer, kind, mod, idx = m.groups()
+    short_mod = mod.replace("_proj", "").replace("c_fc", "fc").replace("down", "dn")
+    return f"L{layer}.{kind}.{short_mod}#{idx}"
+
+
 def plot_top_lagged_pair_heatmap(
-    pairs: list[dict[str, object]], out_path: Path
+    pairs: list[dict[str, object]], out_path: Path, max_pairs: int = 8
 ) -> None:
+    """Top-pair bar chart. Crops to `max_pairs` rows and uses short labels.
+
+    The previous long labels (`h.2.attn.q_proj#245 ↔ h.2.attn.k_proj#220`)
+    crowded the y-axis at column width; the shortened form is much more
+    compact while still uniquely identifying the component.
+    """
     if not pairs:
         return
-    labels = [f"{p['key_a']}  ↔  {p['key_b']}" for p in pairs]
+    pairs = pairs[:max_pairs]
+    labels = [
+        f"{_shorten_component_key(str(p['key_a']))}  ↔  {_shorten_component_key(str(p['key_b']))}"
+        for p in pairs
+    ]
     taus = [int(p["best_tau"]) for p in pairs]  # type: ignore[arg-type]
     scores = [float(p["signed"]) for p in pairs]  # type: ignore[arg-type]
     n = len(pairs)
-    fig, ax = plt.subplots(figsize=(7.5, 0.34 * n + 1.4))
+    fig, ax = plt.subplots(figsize=(6.6, 0.42 * n + 1.6))
     pos = np.arange(n)
     colors = [PALETTE["raw"] if s >= 0 else PALETTE["highlight"] for s in scores]
     ax.barh(pos, scores, color=colors, edgecolor=PALETTE["bg"], linewidth=0.4)
     for y, tau, s in zip(pos, taus, scores, strict=True):
         ax.text(
-            (s + 0.005) if s >= 0 else (s - 0.005),
+            (s + 0.01) if s >= 0 else (s - 0.01),
             y,
             f"τ={tau:+d}",
             va="center",
@@ -341,9 +388,9 @@ def plot_top_lagged_pair_heatmap(
             fontsize=9, color=PALETTE["muted"],
         )
     ax.set_yticks(pos)
-    ax.set_yticklabels(labels, fontsize=8.5, color=PALETTE["ink"])
+    ax.set_yticklabels(labels, fontsize=9, color=PALETTE["ink"], family="monospace")
     ax.invert_yaxis()
     ax.axvline(0, color=PALETTE["axis"], lw=0.7, zorder=1)
-    ax.set_xlabel("signed correlation at best τ")
-    ax.set_title("Top lagged component pairs")
+    ax.set_xlabel("signed |r| at best τ  (max statistic, see caveat)")
+    ax.set_title(f"Top {n} lagged component pairs")
     save_close(fig, out_path)

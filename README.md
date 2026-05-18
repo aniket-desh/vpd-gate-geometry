@@ -102,7 +102,17 @@ outputs/gate_geometry/    summary.json + plots (gate dumps gitignored)
 
 Designed for a single H200 (144 GB VRAM). The whole pipeline keeps
 the gate matrix on GPU and routes cosine kernel + eigendecomp +
-lagged-cross-product to CUDA. One end-to-end main analysis on
-65,536 token positions is ~50s; the 10-pair lagged sweep is ~50s.
-The 9.6 GB gate matrix is the bottleneck and is cached to disk after
-first extraction (~13 min, mostly HF tokenization + forward passes).
+lagged-cross-product to CUDA.
+
+Wall-clock on H200, after one-time extraction is cached:
+
+- main analysis (no null controls): ~50s end-to-end.
+- main analysis with 6 circular-shift null runs: ~6 min.
+- 4-pair Q/K sweep with 6 null runs: ~10-15 min including a
+  ~2-3 min cache load from the network filesystem.
+- 10-pair sweep with null runs: ~25-35 min, dominated by the
+  cross-layer MLP→attention pairs whose source modules have
+  3,072-3,584 columns.
+
+The 9.6 GB gate matrix is the bottleneck before caching. First
+extraction is ~13 min, mostly HF tokenization + forward passes.

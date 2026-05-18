@@ -298,8 +298,13 @@ def run(cfg: AnalysisConfig) -> dict[str, Any]:
             plot_dir / "02_spectrum_raw.png",
             title="Cosine kernel spectrum (raw)",
             extra={
-                "residual": eigvals_resid[:n_show],
-                "baseline": eigvals_shuf[:n_show],
+                "token-residualized": eigvals_resid[:n_show],
+                "shuffled null": eigvals_shuf[:n_show],
+            },
+            label_palette={
+                "raw": "raw",
+                "token-residualized": "residual",
+                "shuffled null": "null",
             },
         )
         plotting.plot_kernel_heatmap(
@@ -333,8 +338,13 @@ def run(cfg: AnalysisConfig) -> dict[str, Any]:
             plot_dir / "09_kernel_variants.png",
             title="Spectrum: cosine vs Pearson vs shuffled null",
             extra={
-                "residual": eigvals_corr[:n_show],
-                "baseline": eigvals_shuf[:n_show],
+                "Pearson (centered)": eigvals_corr[:n_show],
+                "shuffled null": eigvals_shuf[:n_show],
+            },
+            label_palette={
+                "raw": "raw",
+                "Pearson (centered)": "pearson",
+                "shuffled null": "null",
             },
         )
 
