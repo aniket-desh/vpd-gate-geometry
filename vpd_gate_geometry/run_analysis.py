@@ -48,12 +48,15 @@ def run(cfg: AnalysisConfig) -> dict[str, Any]:
 
     print(f"[vpd-gate-geometry] backend={cfg.backend} output_dir={out}", flush=True)
 
-    n_batches_extracted: int | None = None
+    provenance: dict[str, Any] = {}
     if cfg.load_gate_matrix:
         cached = torch.load(cfg.load_gate_matrix, weights_only=False)
         gm = cached["gm"]
         modules = cached["modules"]
-        n_batches_extracted = cached.get("n_batches")
+        provenance = cached.get("provenance") or {
+            "n_batches": cached.get("n_batches"),
+            "backend": "unknown (cache had no provenance dict)",
+        }
         print(f"[vpd-gate-geometry] loaded cached gate matrix from "
               f"{cfg.load_gate_matrix} G={tuple(gm.G.shape)}", flush=True)
     else:
@@ -63,14 +66,28 @@ def run(cfg: AnalysisConfig) -> dict[str, Any]:
         print(f"[vpd-gate-geometry] {len(batches)} batches, "
               f"modules={modules}", flush=True)
         gm = gm_mod.build_gate_matrix(batches, modules=modules)
-        n_batches_extracted = len(batches)
+        provenance = {
+            "backend": cfg.backend,
+            "run_path": cfg.run_path,
+            "target_model_path": cfg.target_model_path,
+            "dataset_name": cfg.dataset_name,
+            "dataset_split": cfg.dataset_split,
+            "dataset_column": cfg.dataset_column,
+            "n_batches": len(batches),
+            "batch_size": cfg.batch_size,
+            "seq_len": cfg.seq_len,
+            "sampling": cfg.sampling,
+            "seed": cfg.seed,
+        }
         print(f"[vpd-gate-geometry] gate matrix: G={tuple(gm.G.shape)} "
               f"N_rows={gm.n_rows} C_total={gm.n_components}", flush=True)
         if cfg.cache_gate_matrix:
             from pathlib import Path as _P
             _P(cfg.cache_gate_matrix).parent.mkdir(parents=True, exist_ok=True)
-            torch.save({"gm": gm, "modules": modules, "n_batches": n_batches_extracted},
-                       cfg.cache_gate_matrix)
+            torch.save(
+                {"gm": gm, "modules": modules, "provenance": provenance},
+                cfg.cache_gate_matrix,
+            )
             print(f"[vpd-gate-geometry] cached gate matrix -> "
                   f"{cfg.cache_gate_matrix}", flush=True)
 
@@ -117,6 +134,31 @@ def run(cfg: AnalysisConfig) -> dict[str, Any]:
     )
     embed = spectral.spectral_embedding(K_raw, dim=2)
 
+    # Centered Pearson kernel on the same gm_top — addresses the "is the
+    # cosine spectrum just shared-activity / base-rate alignment?" critique.
+    K_corr = spectral.correlation_kernel(
+        gm_top.G if not use_cuda else gm_top.G
+    )
+    K_corr_cpu = K_corr.cpu() if K_corr.is_cuda else K_corr
+    eigvals_corr, _ = spectral.spectral_decompose(K_corr, device=work_device)
+
+    # Shuffled-row null on the cosine kernel — destroys all between-row
+    # alignment but keeps each column's marginal. The resulting kernel
+    # is the "ambient" baseline the real spectrum has to beat.
+    perm = torch.randperm(gm_top.G.shape[0], device=gm_top.G.device)
+    G_shuf = gm_top.G[perm]
+    # Independent permutation per column so we don't accidentally
+    # preserve any single-direction structure.
+    for c in range(0, gm_top.G.shape[1], 1024):
+        slab = G_shuf[:, c:c + 1024]
+        col_perm = torch.argsort(torch.rand(slab.shape, device=slab.device), dim=0)
+        G_shuf[:, c:c + 1024] = torch.gather(slab, 0, col_perm)
+    K_shuf = spectral.cosine_kernel_gpu(G_shuf, device=work_device)
+    eigvals_shuf, _ = spectral.spectral_decompose(K_shuf, device=work_device)
+    del G_shuf, perm
+    if use_cuda:
+        torch.cuda.empty_cache()
+
     baseline = residualize.fit_token_baseline(
         gm_top.G,
         gm_top.token_ids,
@@ -140,7 +182,7 @@ def run(cfg: AnalysisConfig) -> dict[str, Any]:
         modules[1] if len(modules) > 1 else modules[0],
     )
     lags = list(range(-cfg.max_lag, cfg.max_lag + 1))
-    lagged_kernels = lagged.lagged_kernel(
+    lagged_result = lagged.lagged_kernel_with_nulls(
         gm,
         module_a=module_a,
         module_b=module_b,
@@ -148,15 +190,33 @@ def run(cfg: AnalysisConfig) -> dict[str, Any]:
         top_k=cfg.lagged_top_k,
         normalize=True,
         device=work_device,
+        n_null_runs=cfg.n_null_runs,
+        null_kind=cfg.null_kind,
     )
+    lagged_kernels = lagged_result["real"]
+    real_stats = lagged_result["real_stats"]
+    null_summary = lagged_result["null_summary"]
     top_pairs = lagged.top_lagged_pairs(lagged_kernels, n_top=15)
-    lag_profile = torch.tensor(
-        [float(lagged_kernels.K[tau].abs().max().item()) for tau in lags]
+    lag_profile_max = torch.tensor(
+        [real_stats[tau]["max"] for tau in lags]
     )
+    lag_profile_top100 = torch.tensor(
+        [real_stats[tau]["mean_top_100"] for tau in lags]
+    )
+    if null_summary:
+        null_top100_mean = torch.tensor(
+            [null_summary[tau]["mean_top_100_mean"] for tau in lags]
+        )
+        null_top100_p95 = torch.tensor(
+            [null_summary[tau]["mean_top_100_p95"] for tau in lags]
+        )
+    else:
+        null_top100_mean = None
+        null_top100_p95 = None
 
     summary: dict[str, Any] = {
         "backend": cfg.backend,
-        "n_batches": n_batches_extracted,
+        "provenance": provenance,
         "modules": modules,
         "module_a": module_a,
         "module_b": module_b,
@@ -165,14 +225,27 @@ def run(cfg: AnalysisConfig) -> dict[str, Any]:
             "C_total": gm.n_components,
             "C_alive": int(alive_keep.sum().item()),
             "C_top_for_kernel": gm_top.n_components,
+            "kernel_subset_label": (
+                f"top-{gm_top.n_components} alive components "
+                f"(threshold g̅>{cfg.alive_threshold}, ranked by mean activity)"
+            ),
         },
         "per_module_stats": {m: _summarize_stats(s) for m, s in per_module_stats.items()},
-        "spectrum_raw": {
+        "spectrum_raw_cosine": {
             "effective_rank": eff_rank_raw,
             "participation_ratio": pr_raw,
             "top10": [float(x) for x in eigvals_raw[:10].tolist()],
         },
-        "spectrum_residual": {
+        "spectrum_pearson": {
+            "effective_rank": spectral.effective_rank(eigvals_corr),
+            "participation_ratio": spectral.participation_ratio(eigvals_corr),
+            "top10": [float(x) for x in eigvals_corr[:10].tolist()],
+        },
+        "spectrum_shuffled_null_cosine": {
+            "effective_rank": spectral.effective_rank(eigvals_shuf),
+            "top10": [float(x) for x in eigvals_shuf[:10].tolist()],
+        },
+        "spectrum_residual_cosine": {
             "top10": [float(x) for x in eigvals_resid[:10].tolist()],
             "effective_rank": spectral.effective_rank(eigvals_resid),
         },
@@ -180,10 +253,24 @@ def run(cfg: AnalysisConfig) -> dict[str, Any]:
             "vocab_size_effective": int(baseline.token_count.numel() - 1),
             "median_r2": float(r2.median().item()),
             "mean_r2": float(r2.mean().item()),
+            "scope": (
+                "fitted on the same top-K alive subset used for the kernel "
+                "(not the full 38,912 atoms)"
+            ),
         },
         "lagged": {
             "lags": lags,
-            "max_abs_per_lag": [float(x) for x in lag_profile.tolist()],
+            "module_a": module_a,
+            "module_b": module_b,
+            "real_stats": real_stats,
+            "null_kind": lagged_result["null_kind"],
+            "n_null_runs": lagged_result["n_null_runs"],
+            "null_summary": null_summary,
+            "top_pairs_caveat": (
+                "max |r| over hundreds of thousands of pairs has heavy "
+                "extreme-value bias. Compare real_stats.mean_top_100 to "
+                "null_summary.mean_top_100_p95 for a less fragile signal."
+            ),
             "top_pairs": top_pairs,
         },
         "config": {
@@ -194,6 +281,8 @@ def run(cfg: AnalysisConfig) -> dict[str, Any]:
             "residualize_max_vocab_tokens": cfg.residualize_max_vocab_tokens,
             "residualize_min_count": cfg.residualize_min_count,
             "residualize_shrinkage": cfg.residualize_shrinkage,
+            "n_null_runs": cfg.n_null_runs,
+            "null_kind": cfg.null_kind,
         },
     }
 
@@ -203,10 +292,15 @@ def run(cfg: AnalysisConfig) -> dict[str, Any]:
     if not cfg.skip_plots:
         plotting.set_style()
         plotting.plot_gate_activity_histogram(stats.mean, plot_dir / "01_gate_activity.png")
+        n_show = min(2 * cfg.max_components, eigvals_raw.numel())
         plotting.plot_spectrum(
-            eigvals_raw[: min(2 * cfg.max_components, eigvals_raw.numel())],
+            eigvals_raw[:n_show],
             plot_dir / "02_spectrum_raw.png",
             title="Cosine kernel spectrum (raw)",
+            extra={
+                "residual": eigvals_resid[:n_show],
+                "baseline": eigvals_shuf[:n_show],
+            },
         )
         plotting.plot_kernel_heatmap(
             K_raw, plot_dir / "03_kernel_clustered_heatmap.png", order=order,
@@ -218,12 +312,31 @@ def run(cfg: AnalysisConfig) -> dict[str, Any]:
         )
         plotting.plot_token_r2_histogram(r2, plot_dir / "05_token_r2.png")
         plotting.plot_spectrum_raw_vs_residual(
-            eigvals_raw[: min(2 * cfg.max_components, eigvals_raw.numel())],
-            eigvals_resid[: min(2 * cfg.max_components, eigvals_resid.numel())],
+            eigvals_raw[:n_show],
+            eigvals_resid[:n_show],
             plot_dir / "06_spectrum_raw_vs_residual.png",
         )
-        plotting.plot_lag_profile(lags, lag_profile, plot_dir / "07_lag_profile.png")
+        # Real-vs-null lag profile (replaces old plot_lag_profile).
+        plotting.plot_lag_profile_with_null(
+            lags,
+            lag_profile_top100,
+            lag_profile_max=lag_profile_max,
+            null_mean=null_top100_mean,
+            null_p95=null_top100_p95,
+            out_path=plot_dir / "07_lag_profile.png",
+            title=f"Lagged co-importance: {module_a} → {module_b}",
+        )
         plotting.plot_top_lagged_pair_heatmap(top_pairs, plot_dir / "08_top_lagged_pairs.png")
+        # Kernel-variant overlay: cosine raw, Pearson, shuffled null.
+        plotting.plot_spectrum(
+            eigvals_raw[:n_show],
+            plot_dir / "09_kernel_variants.png",
+            title="Spectrum: cosine vs Pearson vs shuffled null",
+            extra={
+                "residual": eigvals_corr[:n_show],
+                "baseline": eigvals_shuf[:n_show],
+            },
+        )
 
     print(f"[vpd-gate-geometry] wrote summary -> {out / 'summary.json'}", flush=True)
     if not cfg.skip_plots:

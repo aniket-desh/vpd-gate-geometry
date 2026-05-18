@@ -107,10 +107,6 @@ def set_style() -> None:
     plt.rcParams.update(GOODFIRE_RC)
 
 
-def set_style() -> None:
-    plt.rcParams.update(GOODFIRE_RC)
-
-
 def _to_np(t: torch.Tensor) -> np.ndarray:
     return t.detach().cpu().numpy()
 
@@ -263,6 +259,62 @@ def plot_lag_profile(
     ax.set_xlabel("lag τ  (positions B − positions A)")
     ax.set_ylabel(label)
     ax.set_title("Lagged co-importance profile")
+    save_close(fig, out_path)
+
+
+def plot_lag_profile_with_null(
+    lags: list[int],
+    real_top100: torch.Tensor,
+    *,
+    lag_profile_max: torch.Tensor | None = None,
+    null_mean: torch.Tensor | None = None,
+    null_p95: torch.Tensor | None = None,
+    out_path: Path,
+    title: str = "Lagged co-importance vs null",
+) -> None:
+    """Mean-of-top-100 |r| per τ on real vs null; max |r| in dimmed colour.
+
+    The headline statistic is the mean-of-top-100 (less fragile than max).
+    Max is overlaid in pale grey so the reader can still see it but doesn't
+    take it as the conclusion. Null distribution shown as filled band
+    between its mean and 95th percentile.
+    """
+    fig, ax = plt.subplots(figsize=(6.2, 3.8))
+
+    if null_mean is not None and null_p95 is not None:
+        null_mean_np = _to_np(null_mean)
+        null_p95_np = _to_np(null_p95)
+        ax.fill_between(
+            lags, null_mean_np, null_p95_np,
+            color=PALETTE["baseline"], alpha=0.18, zorder=1,
+            label="null  (mean–p95 band)",
+        )
+        ax.plot(lags, null_mean_np, color=PALETTE["baseline"], lw=1.2, alpha=0.75, zorder=2)
+
+    if lag_profile_max is not None:
+        ax.plot(
+            lags, _to_np(lag_profile_max), color=PALETTE["muted"], lw=1.0,
+            linestyle=":", alpha=0.55, zorder=2, label="real  max |r|",
+        )
+
+    real_np = _to_np(real_top100)
+    ax.plot(lags, real_np, color=PALETTE["lagged"], lw=1.8, marker="o",
+            markersize=5.5, markeredgecolor="white", markeredgewidth=0.8,
+            zorder=4, label="real  mean top-100 |r|")
+    peak_i = int(np.argmax(real_np))
+    ax.scatter([lags[peak_i]], [real_np[peak_i]], s=120, facecolor="none",
+               edgecolor=PALETTE["highlight"], lw=1.4, zorder=5)
+    ax.annotate(
+        f"τ*={lags[peak_i]:+d}\n{real_np[peak_i]:.3f}",
+        xy=(lags[peak_i], real_np[peak_i]),
+        xytext=(8, 8), textcoords="offset points",
+        fontsize=9.5, color=PALETTE["ink"],
+    )
+    ax.axvline(0, color=PALETTE["muted"], lw=0.7, linestyle=":", zorder=2)
+    ax.set_xlabel("lag τ  (positions B − positions A)")
+    ax.set_ylabel("|r|")
+    ax.set_title(title)
+    ax.legend(loc="upper right", borderpad=0.4)
     save_close(fig, out_path)
 
 

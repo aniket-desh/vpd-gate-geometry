@@ -61,6 +61,10 @@ class AnalysisConfig:
     lagged_module_a: str = ""        # empty = first module by name
     lagged_module_b: str = ""        # empty = second module by name
 
+    # Null controls for the lagged kernel
+    n_null_runs: int = 6             # number of permuted nulls to average
+    null_kind: str = "circular"      # one of "circular", "column", "none"
+
     # Plot toggles
     skip_plots: bool = False
 
@@ -109,6 +113,9 @@ def build_arg_parser() -> argparse.ArgumentParser:
     p.add_argument("--lagged-top-k", type=int, default=256)
     p.add_argument("--lagged-module-a", type=str, default="")
     p.add_argument("--lagged-module-b", type=str, default="")
+    p.add_argument("--n-null-runs", type=int, default=6)
+    p.add_argument("--null-kind", type=str, default="circular",
+                   choices=["circular", "column", "none"])
     p.add_argument("--skip-plots", action="store_true")
     return p
 
@@ -147,5 +154,7 @@ def config_from_argv(argv: list[str] | None = None) -> AnalysisConfig:
         lagged_top_k=args.lagged_top_k,
         lagged_module_a=args.lagged_module_a,
         lagged_module_b=args.lagged_module_b,
+        n_null_runs=args.n_null_runs,
+        null_kind=args.null_kind,
         skip_plots=args.skip_plots,
     )

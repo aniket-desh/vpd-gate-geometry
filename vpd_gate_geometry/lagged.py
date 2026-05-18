@@ -146,6 +146,125 @@ def lagged_kernel(
     )
 
 
+def lagged_distributional_stats(kernels: LaggedKernels) -> dict[int, dict[str, float]]:
+    """Tail statistics of |r| per lag.
+
+    Max is fragile under extreme-value bias, especially when comparing
+    hundreds of thousands of component pairs across many τ. We surface
+    several less-fragile summaries:
+
+    - p99_9 / p99 / p95 percentiles of |r|;
+    - mean of the top-100 |r|;
+    - counts of pairs above |r| ∈ {0.5, 0.7, 0.9}.
+
+    Use these alongside (not instead of) `top_lagged_pairs`.
+    """
+    out: dict[int, dict[str, float]] = {}
+    for tau in kernels.lags:
+        absK = kernels.K[tau].abs().flatten().float()
+        k_top = min(100, int(absK.numel()))
+        out[tau] = {
+            "max": float(absK.max().item()),
+            "p99_9": float(torch.quantile(absK, 0.999).item()),
+            "p99": float(torch.quantile(absK, 0.99).item()),
+            "p95": float(torch.quantile(absK, 0.95).item()),
+            "mean_top_100": float(torch.topk(absK, k=k_top).values.mean().item()),
+            "n_above_0_5": int((absK > 0.5).sum().item()),
+            "n_above_0_7": int((absK > 0.7).sum().item()),
+            "n_above_0_9": int((absK > 0.9).sum().item()),
+            "n_pairs": int(absK.numel()),
+        }
+    return out
+
+
+def lagged_kernel_with_nulls(
+    gm: GateMatrix,
+    *,
+    module_a: str,
+    module_b: str,
+    lags: list[int] | None = None,
+    top_k: int = 256,
+    normalize: bool = True,
+    device: str = "cpu",
+    n_null_runs: int = 8,
+    null_kind: str = "circular",
+    null_seed_base: int = 0,
+) -> dict[str, object]:
+    """Run `lagged_kernel` on real data and on `n_null_runs` randomized copies.
+
+    The `null_kind` flag selects which permutation breaks structure:
+    - "circular" → independent per-sequence circular shift of module B
+                   (the canonical null for cross-position alignment);
+    - "column"   → shuffle module B's columns uniformly at random
+                   (tests whether the high-r pairs are component-specific
+                    vs. surface from any same-module activity-matching);
+    - "none"     → no null, return real-only.
+
+    Returns:
+        {
+            "real": LaggedKernels (real data),
+            "real_stats": {τ: distributional stats},
+            "null_stats_per_run": [{τ: stats} × n_null_runs],
+            "null_summary": {τ: per-stat mean/p95 over null runs},
+            "null_kind": ...,
+        }
+    """
+    from . import nulls as nulls_mod
+
+    real = lagged_kernel(
+        gm,
+        module_a=module_a,
+        module_b=module_b,
+        lags=lags,
+        top_k=top_k,
+        normalize=normalize,
+        device=device,
+    )
+    real_stats = lagged_distributional_stats(real)
+
+    null_stats_per_run: list[dict[int, dict[str, float]]] = []
+    if null_kind in ("circular", "column") and n_null_runs > 0:
+        for run_idx in range(n_null_runs):
+            seed = null_seed_base + run_idx
+            if null_kind == "circular":
+                gm_null = nulls_mod.circular_shift_per_sequence_b(gm, module_b, seed=seed)
+            else:
+                gm_null = nulls_mod.permute_components_b(gm, module_b, seed=seed)
+            kernels_null = lagged_kernel(
+                gm_null,
+                module_a=module_a,
+                module_b=module_b,
+                lags=lags,
+                top_k=top_k,
+                normalize=normalize,
+                device=device,
+            )
+            null_stats_per_run.append(lagged_distributional_stats(kernels_null))
+
+    # Summarize: per-τ mean and 95th percentile of each stat across null runs.
+    null_summary: dict[int, dict[str, float]] = {}
+    if null_stats_per_run:
+        for tau in real.lags:
+            agg: dict[str, list[float]] = {}
+            for s in null_stats_per_run:
+                for k, v in s[tau].items():
+                    agg.setdefault(k, []).append(v)
+            null_summary[tau] = {}
+            for k, vs in agg.items():
+                vs_t = torch.tensor(vs, dtype=torch.float32)
+                null_summary[tau][f"{k}_mean"] = float(vs_t.mean().item())
+                null_summary[tau][f"{k}_p95"] = float(torch.quantile(vs_t, 0.95).item())
+
+    return {
+        "real": real,
+        "real_stats": real_stats,
+        "null_stats_per_run": null_stats_per_run,
+        "null_summary": null_summary,
+        "null_kind": null_kind,
+        "n_null_runs": n_null_runs,
+    }
+
+
 def top_lagged_pairs(
     kernels: LaggedKernels, n_top: int = 20, exclude_tau0: bool = True
 ) -> list[dict[str, object]]:
