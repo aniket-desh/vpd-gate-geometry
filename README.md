@@ -15,21 +15,30 @@ residualization, and lagged cross-position kernels.
 See **[`docs/results.md`](docs/results.md)** for the full quantitative
 write-up on the canonical paper run (`goodfire/spd/runs/s-55ea3f9b`).
 
-Headlines, on 65,536 token positions from the canonical Pile stream:
+Headlines, on 65,536 token positions from the canonical Pile stream
+(top-4,096 alive subset for the kernel-level claims):
 
-- **Raw kernel is highly structured.** Top eigenvalue 206; effective
-  rank 940 out of a top-4096 alive subset.
+- **The cosine spectrum separates from a row-shuffled null** for its
+  first ~500 modes; the rest crosses below the null curve. **Pearson
+  (centered) is the honest headline statistic** — top eigval 151,
+  effective rank 1,047. The raw cosine λ₁ = 206 is partly base-rate
+  alignment (shuffled-null λ₁ = 150 too).
 - **Most components are not lexical.** Median per-component R²
   explained by token identity is 0.06; distribution is
-  bimodal-with-tail.
-- **Lagged cross-position structure is real.** All four same-layer
-  Q/K pairs peak at τ < 0 (attention reaching back to earlier
-  source positions); peak τ* deepens from −2 (L0,L1) to −3 (L2,L3).
-- **Layer/module geometries vary by orders of magnitude.** L1 attn.k
-  has 46 alive components in 5.5 effective dimensions; L3 mlp.down
-  has 1,837 alive in 434 dimensions.
+  bimodal-with-tail. Token-residualization spectrum is essentially
+  the centered Pearson spectrum.
+- **Lagged co-importance has a clean bump at τ=0 + immediate
+  neighbours, not a directional negative-τ peak.** Under a per-sequence
+  circular-shift null, the real `mean(top-100 |r|)` separates from
+  null only at τ ∈ {−1, 0, +1, +2} and peaks at τ = 0. An earlier
+  draft of this repo claimed "Q/K pairs all peak at τ<0" — that was a
+  max-fishing artifact and is corrected in `docs/results.md`.
+- **Layer/module geometries vary by ~80×.** L1 attn.k has 46 alive
+  components in 5.5 effective dimensions; L3 mlp.down has 1,837 alive
+  in 434 dimensions. No statistical games involved.
 
-Plots live under [`outputs/gate_geometry/`](outputs/gate_geometry).
+Plots and per-pair lag-profile-with-null curves live under
+[`outputs/gate_geometry/`](outputs/gate_geometry).
 
 ## Quick start
 

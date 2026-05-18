@@ -148,9 +148,14 @@ def test_null_preserves_marginals(tmp_path: Path) -> None:
 
 
 def test_lagged_real_beats_null(tmp_path: Path) -> None:
-    """Mock data plants a τ=+1 cross-module pair. The real lagged
-    mean_top_100 |r| at τ=+1 should exceed the circular-shift null."""
-    cfg = _mock_cfg(tmp_path, mock_n_batches=8, n_null_runs=3)
+    """Mock data plants a τ=+1 cross-module pair. With enough sample, the
+    real lagged max |r| at τ=+1 should beat both the τ=+3 noise floor and
+    the τ=+1 circular-shift null."""
+    cfg = _mock_cfg(
+        tmp_path,
+        mock_n_batches=24, mock_seq_len=128, mock_vocab_size=32,
+        mock_components_per_module=24, n_null_runs=3,
+    )
     batches = list(iter_gate_batches(cfg))
     gm = gm_mod.build_gate_matrix(batches, modules=list(batches[0].gates.keys()))
     modules = list(batches[0].gates.keys())
@@ -159,16 +164,24 @@ def test_lagged_real_beats_null(tmp_path: Path) -> None:
         module_a=modules[0],
         module_b=modules[1],
         lags=list(range(-3, 4)),
-        top_k=8,
+        top_k=24,
         normalize=True,
         device="cpu",
         n_null_runs=cfg.n_null_runs,
         null_kind="circular",
     )
-    real_p1 = result["real_stats"][1]["mean_top_100"]
-    null_p1 = result["null_summary"][1]["mean_top_100_p95"]
+    real_p1 = result["real_stats"][1]["max"]
+    real_p3 = result["real_stats"][3]["max"]
+    null_p1 = result["null_summary"][1]["max_p95"]
+    # Planted τ=+1 signal should beat far-lag noise.
+    assert real_p1 > real_p3, (
+        f"planted τ=+1 signal should beat τ=+3 noise; real_p1={real_p1:.3f} "
+        f"real_p3={real_p3:.3f}"
+    )
+    # And it should beat the circular-shift null at τ=+1.
     assert real_p1 > null_p1, (
-        f"planted τ=+1 pair should beat null p95; real={real_p1:.3f} null_p95={null_p1:.3f}"
+        f"planted τ=+1 should beat null; real_max={real_p1:.3f} "
+        f"null_max_p95={null_p1:.3f}"
     )
 
 

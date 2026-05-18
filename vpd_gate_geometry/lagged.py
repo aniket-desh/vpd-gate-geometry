@@ -177,6 +177,83 @@ def lagged_distributional_stats(kernels: LaggedKernels) -> dict[int, dict[str, f
     return out
 
 
+def _lagged_from_views(
+    G_a: torch.Tensor,
+    G_b: torch.Tensor,
+    sequence_starts: list[int],
+    sequence_ends: list[int],
+    lags: list[int],
+    normalize: bool = True,
+) -> dict[int, torch.Tensor]:
+    """Accumulate Pearson r(τ) from precomputed [N, C_a] and [N, C_b] slices.
+
+    The two slices must share row ordering and have a per-sequence
+    layout defined by `sequence_starts` / `sequence_ends`. Returns a
+    fresh dict[τ -> CPU [C_a, C_b] tensor]. No allocation of the
+    full GateMatrix — only sufficient stats per lag.
+    """
+    Ca = G_a.shape[1]
+    Cb = G_b.shape[1]
+    dev = G_a.device
+    sum_ab = {tau: torch.zeros((Ca, Cb), device=dev) for tau in lags}
+    sum_a  = {tau: torch.zeros(Ca, device=dev) for tau in lags}
+    sum_b  = {tau: torch.zeros(Cb, device=dev) for tau in lags}
+    sum_a2 = {tau: torch.zeros(Ca, device=dev) for tau in lags}
+    sum_b2 = {tau: torch.zeros(Cb, device=dev) for tau in lags}
+    n_pairs = {tau: 0 for tau in lags}
+    for start, end in zip(sequence_starts, sequence_ends, strict=True):
+        A = G_a[start:end]
+        B = G_b[start:end]
+        T = A.shape[0]
+        for tau in lags:
+            if tau >= 0:
+                if T - tau <= 0: continue
+                a_part = A[: T - tau]; b_part = B[tau:]
+            else:
+                if T + tau <= 0: continue
+                a_part = A[-tau:]; b_part = B[: T + tau]
+            sum_ab[tau] += a_part.T @ b_part
+            sum_a[tau]  += a_part.sum(dim=0)
+            sum_b[tau]  += b_part.sum(dim=0)
+            sum_a2[tau] += (a_part * a_part).sum(dim=0)
+            sum_b2[tau] += (b_part * b_part).sum(dim=0)
+            n_pairs[tau] += a_part.shape[0]
+    K_out: dict[int, torch.Tensor] = {}
+    for tau in lags:
+        n = max(n_pairs[tau], 1)
+        mean_a = sum_a[tau] / n
+        mean_b = sum_b[tau] / n
+        cov = sum_ab[tau] / n - torch.outer(mean_a, mean_b)
+        if normalize:
+            var_a = (sum_a2[tau] / n - mean_a * mean_a).clamp_min(1e-12)
+            var_b = (sum_b2[tau] / n - mean_b * mean_b).clamp_min(1e-12)
+            denom = torch.sqrt(torch.outer(var_a, var_b))
+            K_out[tau] = (cov / denom).clamp_(-1.0, 1.0).cpu()
+        else:
+            K_out[tau] = cov.cpu()
+    return K_out
+
+
+def _shuffle_b_circular_(G_b: torch.Tensor, sequence_starts, sequence_ends, seed: int) -> None:
+    """In-place per-sequence circular shift of G_b. ~O(N·C) memory, no full clone."""
+    import numpy as _np
+    rng = _np.random.default_rng(seed)
+    for start, end in zip(sequence_starts, sequence_ends, strict=True):
+        T = end - start
+        if T <= 1: continue
+        offset = int(rng.integers(1, T))
+        G_b[start:end] = torch.roll(G_b[start:end], shifts=offset, dims=0)
+
+
+def _shuffle_b_columns_(G_b: torch.Tensor, seed: int) -> None:
+    """In-place column permutation of G_b."""
+    import numpy as _np
+    rng = _np.random.default_rng(seed)
+    perm = torch.as_tensor(rng.permutation(int(G_b.shape[1])),
+                           dtype=torch.long, device=G_b.device)
+    G_b[:] = G_b[:, perm]
+
+
 def lagged_kernel_with_nulls(
     gm: GateMatrix,
     *,
@@ -192,54 +269,66 @@ def lagged_kernel_with_nulls(
 ) -> dict[str, object]:
     """Run `lagged_kernel` on real data and on `n_null_runs` randomized copies.
 
+    Optimized path: we slice out G_a_top and G_b_top once (each ~100 MB
+    after top-k restriction at top_k=384, C_a≈384), move them to GPU,
+    then for each null run we shuffle G_b_top *in place* and re-accumulate
+    sufficient stats. No more 9.6 GB clones per run.
+
     The `null_kind` flag selects which permutation breaks structure:
-    - "circular" → independent per-sequence circular shift of module B
-                   (the canonical null for cross-position alignment);
-    - "column"   → shuffle module B's columns uniformly at random
-                   (tests whether the high-r pairs are component-specific
-                    vs. surface from any same-module activity-matching);
+    - "circular" → independent per-sequence circular shift of module B;
+    - "column"   → shuffle module B's columns uniformly at random;
     - "none"     → no null, return real-only.
-
-    Returns:
-        {
-            "real": LaggedKernels (real data),
-            "real_stats": {τ: distributional stats},
-            "null_stats_per_run": [{τ: stats} × n_null_runs],
-            "null_summary": {τ: per-stat mean/p95 over null runs},
-            "null_kind": ...,
-        }
     """
-    from . import nulls as nulls_mod
+    lags = lags if lags is not None else [-2, -1, 0, 1, 2]
+    cols_a = _module_columns(gm, module_a)
+    cols_b = _module_columns(gm, module_b)
+    G_a_full = gm.G[:, cols_a]
+    G_b_full = gm.G[:, cols_b]
+    G_a_top, sel_a = restrict_to_top_components(G_a_full, top_k)
+    G_b_top, sel_b = restrict_to_top_components(G_b_full, top_k)
+    keys_a = [gm.keys[int(cols_a[int(i)])] for i in sel_a.tolist()]
+    keys_b = [gm.keys[int(cols_b[int(i)])] for i in sel_b.tolist()]
 
-    real = lagged_kernel(
-        gm,
-        module_a=module_a,
-        module_b=module_b,
-        lags=lags,
-        top_k=top_k,
-        normalize=normalize,
-        device=device,
+    if device != "cpu" and torch.cuda.is_available():
+        G_a_top = G_a_top.to(device, dtype=torch.float32).contiguous()
+        G_b_top = G_b_top.to(device, dtype=torch.float32).contiguous()
+    else:
+        G_a_top = G_a_top.contiguous()
+        G_b_top = G_b_top.contiguous()
+
+    views = _sequence_views(gm)
+    seq_starts = [v[1] for v in views]
+    seq_ends   = [v[2] for v in views]
+
+    # Real kernels
+    K_real = _lagged_from_views(G_a_top, G_b_top, seq_starts, seq_ends, lags, normalize)
+    real = LaggedKernels(
+        lags=lags, K=K_real, keys_a=keys_a, keys_b=keys_b,
+        module_a=module_a, module_b=module_b,
     )
     real_stats = lagged_distributional_stats(real)
 
     null_stats_per_run: list[dict[int, dict[str, float]]] = []
     if null_kind in ("circular", "column") and n_null_runs > 0:
+        G_b_workbench = G_b_top.clone()  # one clone, reused across runs
         for run_idx in range(n_null_runs):
             seed = null_seed_base + run_idx
+            G_b_workbench.copy_(G_b_top)  # reset to real before each shuffle
             if null_kind == "circular":
-                gm_null = nulls_mod.circular_shift_per_sequence_b(gm, module_b, seed=seed)
+                _shuffle_b_circular_(G_b_workbench, seq_starts, seq_ends, seed=seed)
             else:
-                gm_null = nulls_mod.permute_components_b(gm, module_b, seed=seed)
-            kernels_null = lagged_kernel(
-                gm_null,
-                module_a=module_a,
-                module_b=module_b,
-                lags=lags,
-                top_k=top_k,
-                normalize=normalize,
-                device=device,
+                _shuffle_b_columns_(G_b_workbench, seed=seed)
+            K_null = _lagged_from_views(
+                G_a_top, G_b_workbench, seq_starts, seq_ends, lags, normalize,
             )
-            null_stats_per_run.append(lagged_distributional_stats(kernels_null))
+            null_real = LaggedKernels(
+                lags=lags, K=K_null, keys_a=keys_a, keys_b=keys_b,
+                module_a=module_a, module_b=module_b,
+            )
+            null_stats_per_run.append(lagged_distributional_stats(null_real))
+        del G_b_workbench
+        if device != "cpu":
+            torch.cuda.empty_cache()
 
     # Summarize: per-τ mean and 95th percentile of each stat across null runs.
     null_summary: dict[int, dict[str, float]] = {}
