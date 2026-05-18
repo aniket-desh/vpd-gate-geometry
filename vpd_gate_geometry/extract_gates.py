@@ -135,47 +135,30 @@ def _mock_iter_batches(cfg: AnalysisConfig) -> Iterator[GateBatch]:
 
 
 def _repo_iter_batches(cfg: AnalysisConfig) -> Iterator[GateBatch]:
-    """Live ComponentModel.calc_causal_importances over a tokenized dataset.
+    """Live `ComponentModel.calc_causal_importances` over a tokenized dataset.
 
-    Call chain (see external/param-decomp/.../component_model.py:572 and
-    external/param-decomp/.../harvest_fn/param_decomp.py for the
-    reference implementation):
+    Mirrors the call chain used by upstream's harvest pipeline
+    (see external/param-decomp/.../harvest_fn/param_decomp.py).
 
-        from param_decomp.models.component_model import (
-            ComponentModel, ParamDecompRunInfo,
-        )
-        run_info = ParamDecompRunInfo.from_path(cfg.run_path)
-        model = ComponentModel.from_run_info(run_info).to(cfg.device).eval()
-        sampling = cfg.sampling or run_info.config.sampling
-        for batch in dataloader:                          # int64 [B, T]
-            out = model(batch.to(cfg.device), cache_type="input")
-            ci = model.calc_causal_importances(
-                pre_weight_acts=out.cache,
-                sampling=sampling,
-                detach_inputs=True,
-            )
-            yield GateBatch(gates=ci.lower_leaky, token_ids=batch, ...)
-
-    Implemented as a *deliberately failing* stub for now: the upstream
-    package is not yet installed in this venv (it pins Python==3.13.*
-    and lives in `external/param-decomp/`). Once installed, replace
-    the body of this function with the call chain above.
+    The run config carried by `ParamDecompRunInfo` already specifies the
+    dataset, tokenizer, sampling type, and seq_len. By default we use
+    that run config verbatim; `cfg.dataset_name` / `cfg.seq_len` /
+    `cfg.sampling` only override it if explicitly set.
     """
     try:
-        from param_decomp.models.component_model import (  # noqa: F401
+        from param_decomp.models.component_model import (
             ComponentModel,
             ParamDecompRunInfo,
         )
+        from param_decomp.data import train_loader_and_tokenizer
     except ImportError as exc:
         raise RuntimeError(
             "repo backend requires `param_decomp` to be importable. "
             "Install it from external/param-decomp/ (note: it pins "
             "Python==3.13.*). Steps:\n"
-            "    cd external/param-decomp && uv python install 3.13 "
-            "&& uv sync && cd ../..\n"
-            "Then either run this CLI from inside that venv "
-            "(`uv run --project external/param-decomp ...`) or expose "
-            "param_decomp on PYTHONPATH. See docs/repo_readiness_report.md."
+            "    cd external/param-decomp && uv sync && cd ../..\n"
+            "Then run this CLI from inside that venv "
+            "(`uv run --project external/param-decomp -m vpd_gate_geometry.run_analysis ...`)."
         ) from exc
 
     if not cfg.run_path:
@@ -184,16 +167,79 @@ def _repo_iter_batches(cfg: AnalysisConfig) -> Iterator[GateBatch]:
             "(e.g. wandb:goodfire/spd/runs/s-55ea3f9b)."
         )
 
-    # TODO: once upstream installs cleanly, fill in:
-    #   1. ParamDecompRunInfo.from_path(cfg.run_path)
-    #   2. ComponentModel.from_run_info(run_info).to(cfg.device).eval()
-    #   3. tokenized dataloader from cfg.dataset_name / cfg.dataset_split
-    #      (column = cfg.dataset_column, length = cfg.seq_len)
-    #   4. for-loop yielding GateBatch(gates=ci.lower_leaky, token_ids=batch)
-    raise RuntimeError(
-        "repo backend body is not yet implemented; only the import check "
-        "is wired up. See the TODO in extract_gates._repo_iter_batches."
+    # Offline-safe W&B: ComponentModel internals only call wandb.Api() if the
+    # pretrained_model_name is a wandb path, so we sidestep both by setting
+    # WANDB_MODE=offline and pointing pretrained_model_name at a local file.
+    import os as _os
+    _os.environ.setdefault("WANDB_MODE", "offline")
+
+    print(f"[repo] loading run info from {cfg.run_path!r} ...", flush=True)
+    run_info = ParamDecompRunInfo.from_path(cfg.run_path)
+    if cfg.target_model_path:
+        print(f"[repo] overriding pretrained_model_name -> {cfg.target_model_path}", flush=True)
+        run_info.config = run_info.config.model_copy(
+            update={"pretrained_model_name": cfg.target_model_path}
+        )
+    config = run_info.config
+    sampling = cfg.sampling or config.sampling
+    print(f"[repo] sampling={sampling!r}, building ComponentModel ...", flush=True)
+    model = ComponentModel.from_run_info(run_info).to(cfg.device).eval()
+
+    # If the user overrode any dataset bits, splice them into a *new* task_config
+    # (pydantic models are frozen, so we model_copy through to a new Config).
+    task_overrides: dict[str, object] = {}
+    if cfg.dataset_name:
+        task_overrides["dataset_name"] = cfg.dataset_name
+    if cfg.dataset_split:
+        task_overrides["train_data_split"] = cfg.dataset_split
+    if cfg.dataset_column:
+        task_overrides["column_name"] = cfg.dataset_column
+    if cfg.seq_len:
+        task_overrides["max_seq_len"] = cfg.seq_len
+    if task_overrides:
+        new_task = config.task_config.model_copy(update=task_overrides)
+        config = config.model_copy(update={"task_config": new_task})
+
+    task_cfg = config.task_config
+    print(
+        f"[repo] dataset={task_cfg.dataset_name} split={task_cfg.train_data_split} "
+        f"col={task_cfg.column_name} seq_len={task_cfg.max_seq_len} batch_size={cfg.batch_size}",
+        flush=True,
     )
+    loader, _tok = train_loader_and_tokenizer(config, batch_size=cfg.batch_size)
+
+    import torch as _torch
+    n_yielded = 0
+    for batch in loader:
+        if n_yielded >= cfg.n_batches:
+            break
+        batch_device = batch.to(cfg.device)
+        with _torch.no_grad():
+            out = model(batch_device, cache_type="input")
+            ci = model.calc_causal_importances(
+                pre_weight_acts=out.cache,
+                sampling=sampling,
+                detach_inputs=True,
+            )
+        # Bring gates back to CPU to keep VRAM bounded across many batches.
+        gates_cpu = {k: v.detach().cpu() for k, v in ci.lower_leaky.items()}
+        n_yielded += 1
+        print(
+            f"[repo] batch {n_yielded}/{cfg.n_batches} "
+            f"shape={tuple(batch.shape)} modules={len(gates_cpu)} "
+            f"C_per_module={list(gates_cpu.values())[0].shape[-1]}",
+            flush=True,
+        )
+        yield GateBatch(
+            gates=gates_cpu,
+            token_ids=batch.detach().cpu(),
+            metadata={
+                "backend": "repo",
+                "run_path": cfg.run_path,
+                "batch_idx": n_yielded - 1,
+                "sampling": sampling,
+            },
+        )
 
 
 # ------------------------------------------------------------ artifact backend

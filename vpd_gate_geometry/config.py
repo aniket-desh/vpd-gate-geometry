@@ -30,19 +30,22 @@ class AnalysisConfig:
     mock_vocab_size: int = 512
     mock_n_batches: int = 8
 
-    # Repo backend
+    # Repo backend (all "" / 0 means "use the run config verbatim")
     run_path: str = ""               # e.g. "wandb:goodfire/spd/runs/s-55ea3f9b"
-    dataset_name: str = "danbraunai/pile-uncopyrighted-tok-shuffled"
-    dataset_split: str = "train"
-    dataset_column: str = "input_ids"
+    dataset_name: str = ""
+    dataset_split: str = ""
+    dataset_column: str = ""
     n_batches: int = 32
     batch_size: int = 8
-    seq_len: int = 256
+    seq_len: int = 0
     device: str = "cuda"
     sampling: str = ""               # overrides run_info.config.sampling if non-empty
 
     # Artifact backend
     harvest_dir: str = ""            # path to harvest sub-run
+
+    # Local-override paths for the repo backend (skip W&B auth)
+    target_model_path: str = ""      # local path to pretrained target-LM checkpoint
 
     # Residualization
     residualize_max_vocab_tokens: int = 4096
@@ -76,16 +79,18 @@ def build_arg_parser() -> argparse.ArgumentParser:
     p.add_argument("--mock-n-batches", type=int, default=8)
 
     p.add_argument("--run-path", type=str, default="")
-    p.add_argument("--dataset-name", type=str, default="danbraunai/pile-uncopyrighted-tok-shuffled")
-    p.add_argument("--dataset-split", type=str, default="train")
-    p.add_argument("--dataset-column", type=str, default="input_ids")
+    p.add_argument("--dataset-name", type=str, default="")
+    p.add_argument("--dataset-split", type=str, default="")
+    p.add_argument("--dataset-column", type=str, default="")
     p.add_argument("--n-batches", type=int, default=32)
     p.add_argument("--batch-size", type=int, default=8)
-    p.add_argument("--seq-len", type=int, default=256)
+    p.add_argument("--seq-len", type=int, default=0)
     p.add_argument("--device", type=str, default="cuda")
     p.add_argument("--sampling", type=str, default="")
 
     p.add_argument("--harvest-dir", type=str, default="")
+    p.add_argument("--target-model-path", type=str, default="",
+                   help="Local path to pretrained target-LM checkpoint, bypasses W&B fetch.")
 
     p.add_argument("--residualize-max-vocab-tokens", type=int, default=4096)
     p.add_argument("--residualize-min-count", type=int, default=16)
@@ -121,6 +126,7 @@ def config_from_argv(argv: list[str] | None = None) -> AnalysisConfig:
         device=args.device,
         sampling=args.sampling,
         harvest_dir=args.harvest_dir,
+        target_model_path=args.target_model_path,
         residualize_max_vocab_tokens=args.residualize_max_vocab_tokens,
         residualize_min_count=args.residualize_min_count,
         residualize_shrinkage=args.residualize_shrinkage,
