@@ -1,0 +1,11 @@
+.env
+.venv/
+__pycache__/
+*.pyc
+outputs/
+!outputs/gate_geometry/.gitkeep
+external/
+*.egg-info/
+build/
+dist/
+vpd_gate_geometry.egg-info/

@@ -1,0 +1,37 @@
+[project]
+name = "vpd-gate-geometry"
+version = "0.1.0"
+description = "Spectral / tensor geometry of VPD causal-importance gates"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "torch>=2.4",
+    "numpy>=2.0",
+    "scipy>=1.13",
+    "matplotlib>=3.8",
+    "scikit-learn>=1.4",
+    "tqdm>=4.66",
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+repo = [
+    # Heavy deps only needed when --backend repo loads ComponentModel.
+    # Mirrors a subset of goodfire-ai/param-decomp/pyproject.toml.
+    "transformers>=4.40",
+    "datasets>=2.21",
+    "wandb>=0.20.1",
+    "jaxtyping>=0.2",
+    "einops>=0.8",
+    "pydantic<2.12",
+    "fire",
+    "python-dotenv",
+]
+
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["vpd_gate_geometry*"]
