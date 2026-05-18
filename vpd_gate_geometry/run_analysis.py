@@ -98,10 +98,16 @@ def run(cfg: AnalysisConfig) -> dict[str, Any]:
     K_resid = spectral.cosine_kernel(G_resid)
     eigvals_resid, _ = spectral.spectral_decompose(K_resid)
 
-    # Lagged kernel: use the first two modules if available, else first module
-    # against itself.
-    module_a = modules[0]
-    module_b = modules[1] if len(modules) > 1 else modules[0]
+    # Lagged kernel: prefer user-specified pair, otherwise default to a
+    # meaningful within-layer Q/K pair if present, else the first two modules.
+    module_a = cfg.lagged_module_a or next(
+        (m for m in modules if m.endswith(".attn.q_proj")), modules[0]
+    )
+    module_b = cfg.lagged_module_b or next(
+        (m for m in modules
+         if m.endswith(".attn.k_proj") and m.rsplit(".", 2)[0] == module_a.rsplit(".", 2)[0]),
+        modules[1] if len(modules) > 1 else modules[0],
+    )
     lags = list(range(-cfg.max_lag, cfg.max_lag + 1))
     lagged_kernels = lagged.lagged_kernel(
         gm,

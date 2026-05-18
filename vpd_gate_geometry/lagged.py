@@ -88,15 +88,18 @@ def lagged_kernel(
     # Per-sequence views so cross-position pairs stay within a sequence.
     views = _sequence_views(gm)
 
-    if normalize:
-        mu_a = G_a_top.mean(dim=0)
-        mu_b = G_b_top.mean(dim=0)
-        std_a = G_a_top.std(dim=0, unbiased=False).clamp_min(1e-8)
-        std_b = G_b_top.std(dim=0, unbiased=False).clamp_min(1e-8)
-
     Ca = G_a_top.shape[1]
     Cb = G_b_top.shape[1]
-    K_out: dict[int, torch.Tensor] = {tau: torch.zeros((Ca, Cb)) for tau in lags}
+    # Pearson correlation accumulated per-lag from sufficient statistics:
+    #     E[ab] - E[a]E[b]
+    #     ─────────────────
+    #     std_a · std_b
+    # where the expectations are over the τ-valid slice (a_part, b_part).
+    sum_ab: dict[int, torch.Tensor] = {tau: torch.zeros((Ca, Cb)) for tau in lags}
+    sum_a:  dict[int, torch.Tensor] = {tau: torch.zeros(Ca) for tau in lags}
+    sum_b:  dict[int, torch.Tensor] = {tau: torch.zeros(Cb) for tau in lags}
+    sum_a2: dict[int, torch.Tensor] = {tau: torch.zeros(Ca) for tau in lags}
+    sum_b2: dict[int, torch.Tensor] = {tau: torch.zeros(Cb) for tau in lags}
     n_pairs: dict[int, int] = {tau: 0 for tau in lags}
 
     for _, start, end in views:
@@ -114,15 +117,26 @@ def lagged_kernel(
                     continue
                 a_part = A[-tau:]
                 b_part = B[: T + tau]
-            if normalize:
-                a_part = (a_part - mu_a[None, :]) / std_a[None, :]
-                b_part = (b_part - mu_b[None, :]) / std_b[None, :]
-            K_out[tau] += a_part.T @ b_part
+            sum_ab[tau] += a_part.T @ b_part
+            sum_a[tau]  += a_part.sum(dim=0)
+            sum_b[tau]  += b_part.sum(dim=0)
+            sum_a2[tau] += (a_part * a_part).sum(dim=0)
+            sum_b2[tau] += (b_part * b_part).sum(dim=0)
             n_pairs[tau] += a_part.shape[0]
 
+    K_out: dict[int, torch.Tensor] = {}
     for tau in lags:
-        if n_pairs[tau] > 0:
-            K_out[tau] /= n_pairs[tau]
+        n = max(n_pairs[tau], 1)
+        mean_a = sum_a[tau] / n
+        mean_b = sum_b[tau] / n
+        cov = sum_ab[tau] / n - torch.outer(mean_a, mean_b)
+        if normalize:
+            var_a = (sum_a2[tau] / n - mean_a * mean_a).clamp_min(1e-12)
+            var_b = (sum_b2[tau] / n - mean_b * mean_b).clamp_min(1e-12)
+            denom = torch.sqrt(torch.outer(var_a, var_b))
+            K_out[tau] = (cov / denom).clamp_(-1.0, 1.0)
+        else:
+            K_out[tau] = cov
 
     return LaggedKernels(
         lags=lags,

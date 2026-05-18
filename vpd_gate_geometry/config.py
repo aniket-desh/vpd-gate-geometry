@@ -54,6 +54,8 @@ class AnalysisConfig:
 
     # Lagged kernel restriction
     lagged_top_k: int = 256
+    lagged_module_a: str = ""        # empty = first module by name
+    lagged_module_b: str = ""        # empty = second module by name
 
     # Plot toggles
     skip_plots: bool = False
@@ -97,6 +99,8 @@ def build_arg_parser() -> argparse.ArgumentParser:
     p.add_argument("--residualize-shrinkage", type=float, default=100.0)
 
     p.add_argument("--lagged-top-k", type=int, default=256)
+    p.add_argument("--lagged-module-a", type=str, default="")
+    p.add_argument("--lagged-module-b", type=str, default="")
     p.add_argument("--skip-plots", action="store_true")
     return p
 
@@ -131,5 +135,7 @@ def config_from_argv(argv: list[str] | None = None) -> AnalysisConfig:
         residualize_min_count=args.residualize_min_count,
         residualize_shrinkage=args.residualize_shrinkage,
         lagged_top_k=args.lagged_top_k,
+        lagged_module_a=args.lagged_module_a,
+        lagged_module_b=args.lagged_module_b,
         skip_plots=args.skip_plots,
     )
