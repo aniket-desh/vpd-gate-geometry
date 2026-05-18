@@ -2,10 +2,14 @@
 .venv/
 __pycache__/
 *.pyc
-outputs/
-!outputs/gate_geometry/.gitkeep
-external/
 *.egg-info/
 build/
 dist/
-vpd_gate_geometry.egg-info/
+external/
+runs/
+# Big intermediate gate dumps; keep outputs/ small.
+outputs/**/*.pt
+outputs/**/*.pth
+outputs/**/*.bin
+outputs/**/*.npz
+outputs/**/*.npy
