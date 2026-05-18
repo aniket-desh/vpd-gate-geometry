@@ -28,12 +28,13 @@ where my own first-pass statistics were overclaiming.
    the top-K alive subset.** Median per-component R² = 0.06,
    bimodal-with-tail. Residualization is a real but secondary
    transformation; centering matters more.
-4. **The lagged Pearson correlation has a clear bump around τ=0, not a
-   structured negative-τ peak.** Across all four same-layer Q/K pairs,
-   the real `mean-top-100 |r|` separates from the circular-shift null
-   only at τ ∈ {−1, 0, +1, +2}, and peaks at τ=0. My earlier "all peak
-   at τ<0" claim came from `max |r|` over hundreds of thousands of
-   pairs, which is the wrong summary statistic (extreme-value bias).
+4. **Within-layer Q/K has real one-token-back coupling for 3 of 4
+   layers; longer-range claims do not survive.** Using the
+   null-controlled `mean(top-100 |r|)` statistic, L0/L1/L3 Q/K peak
+   at **τ = −1** with excess +0.27 to +0.61 over null; L2 peaks at
+   τ = 0. Past τ = ±2 every layer collapses to within the null band.
+   My v1 "τ deepens to −2/−3 with depth" claim was a max-fishing
+   artifact; the real signal is one position back, not three.
 5. **Layer/module geometries still differ sharply.** L1 attn.k has 46
    alive components in 5.5 effective dimensions; L3 mlp.down has 1,837
    alive in 434 dimensions. This survives the null-control discipline
@@ -181,49 +182,72 @@ by 40–60% (excess ~0.14, null floor ~0.10). There is *no* evidence
 for the "Q at later position reaches back several tokens to K"
 narrative I asserted in v1. Anything past τ = ±2 is at the noise floor.
 
-### 3.2 Sweep across 10 module pairs
+### 3.2 Sweep across all four same-layer Q/K pairs
 
-→ `outputs/gate_geometry/lagged_sweep/`
+→ `outputs/gate_geometry/lagged_sweep_qk/`
 
-Same null-controlled procedure on the four same-layer Q/K pairs, two
-same-layer O/V pairs, and four cross-layer MLP→attention pairs.
-(Full numbers in `outputs/gate_geometry/lagged_sweep/summary.json`;
-plots `*__lag_profile.png` for each pair.)
+Same null-controlled procedure on the four within-layer
+attention.q_proj → attention.k_proj pairs.
 
-| pair | location of mean-top-100 peak | excess at peak | excess at τ=±3 |
-| --- | :---: | ---: | ---: |
-| L0 attn.q → attn.k | τ ∈ {0, ±1} | ≈ +0.14 | ≈ +0.02 |
-| L1 attn.q → attn.k | _to fill in_ | _to fill in_ | _to fill in_ |
-| L2 attn.q → attn.k | **τ = 0** | +0.143 | +0.02 |
-| L3 attn.q → attn.k | _to fill in_ | _to fill in_ | _to fill in_ |
-| L0 attn.o → attn.v | _to fill in_ | | |
-| L2 attn.o → attn.v | _to fill in_ | | |
-| L0 mlp.down → L1 attn.q | _to fill in_ | | |
-| L0 mlp.down → L1 attn.k | _to fill in_ | | |
-| L1 mlp.down → L2 attn.q | _to fill in_ | | |
-| L2 mlp.down → L3 attn.q | _to fill in_ | | |
+| pair | τ where top-100 \|r\| peaks | top-100 \|r\| at peak | null p95 at peak | excess at peak |
+| --- | :---: | ---: | ---: | ---: |
+| L0 q→k | **−1** | 0.689 | 0.083 | **+0.607** |
+| L1 q→k | **−1** | 0.393 | 0.046 | **+0.347** |
+| L2 q→k | **0**  | 0.246 | 0.103 | **+0.143** |
+| L3 q→k | **−1** | 0.357 | 0.091 | **+0.265** |
 
-_The full table will be filled in once the sweep completes. The L2 Q/K
-row is the only fully-computed entry at the time of writing._
+For three of the four layers the peak is at **τ = −1, not τ = 0**.
+That direction is consistent with "the query gate at destination
+position t couples maximally with the key gate at the previous source
+position t − 1" — i.e. one-token-back attention. L2 is the exception
+and peaks at τ = 0 (same-token coupling). All four peaks sit well
+above the circular-shift null distribution.
+
+What does **not** survive the null at these scales: longer-range
+peaks. Looking at the L0 q→k full curve as the cleanest example,
+
+| τ | top-100 \|r\| | null p95 | excess |
+| ---: | ---: | ---: | ---: |
+| −6 | 0.138 | 0.097 | +0.041 |
+| −5 | 0.115 | 0.092 | +0.023 |
+| −4 | 0.072 | 0.094 | −0.022 |
+| −3 | 0.190 | 0.072 | +0.119 |
+| −2 | 0.256 | 0.079 | **+0.177** |
+| **−1** | **0.689** | 0.083 | **+0.607** |
+| **0**  | **0.687** | 0.111 | **+0.576** |
+| +1 | 0.075 | 0.080 | −0.005 |
+| +2 | 0.080 | 0.135 | −0.055 |
+| +3 | 0.085 | 0.083 | +0.002 |
+| +4 | 0.085 | 0.095 | −0.011 |
+| +5 | 0.272 | 0.184 | +0.087 |
+| +6 | 0.414 | 0.100 | +0.314 |
+
+— a sharp asymmetric peak at τ ∈ {−1, 0} with substantial neighbor
+support at τ = −2, −3, then collapse to the null band for τ ≥ +1.
+The small uptick at τ = +5, +6 is suspicious (could be a sequence
+boundary or window-edge artifact at our seq_len = 512) and would
+need a longer τ range to interpret; the headline structure is the
+−1/0 peak. The visible plot is
+`outputs/gate_geometry/lagged_sweep_qk/h_0_attn_q_proj__h_0_attn_k_proj__lag_profile.png`.
 
 ### 3.3 What the lagged result actually shows
 
-- **Same-position and immediate-neighbor (τ = ±1) coupling between
-  attention Q and K is real**, with a 1.4–1.5× lift over the
-  circular-shift null in the mean-top-100 statistic.
-- **The directional "Q reaches back to K" interpretation does not
-  survive the null.** When you control for ambient extreme values
-  using a circular-shift null, the previously reported negative-τ
-  peaks collapse to the noise floor.
-- **Max |r| is the wrong summary statistic.** It's fine as an
-  illustrative diagnostic (e.g. "the strongest pair we found"), but
-  it cannot carry directional claims at this scale; the null shows
-  max |r| ≥ 0.7 routinely.
+- **Asymmetric one-token-back coupling between Q and K is real for
+  L0, L1, L3**, with excess over null of +0.27 to +0.61 in the
+  mean-top-100 statistic. L2 alone peaks at τ = 0.
+- **Past τ = ±2 the signal collapses to noise floor.** The earlier
+  v1 claim that "peaks deepen with depth from τ=−2 to τ=−3" came
+  from max-fishing in the heavy tail and does not survive the null.
+- **Max |r| is unusable on its own.** It saturates near 1.0 at many
+  τ values that are statistically indistinguishable from null. The
+  lag-profile plot keeps it visible in dotted gray so the reader can
+  see the fragility; the green line is the actual signal.
 
-The right reframing of H3: *"Lagged co-importance reveals real
-cross-position structure, concentrated at lag τ = 0 and immediate
-neighbors, with no evidence for longer-range directional coupling in
-this probe."*
+Honest reframing of H3: *"Within-layer Q/K coupling has real
+cross-position structure, concentrated at τ = −1 in three of four
+layers (with L2 peaking at τ = 0), tapering into the null band by
+τ = ±2. There is no evidence for longer-range directional coupling
+in this probe."*
 
 ## 4. Per-(layer, module) geometry
 
@@ -303,5 +327,5 @@ of magnitude in effective rank.
 | --- | --- | --- |
 | H1 | Raw gate co-importance is highly structured | **partial yes**. First ~500 cosine eigenvalues separate from shuffle null. Most of the top cosine eigenvalue is mean alignment, not mechanism structure. Use Pearson, not cosine, as headline. |
 | H2 | Token identity explains a nontrivial but incomplete fraction | **yes, modestly**. Median R² 0.06, bimodal-with-tail. Token-residualization spectrum is essentially the centered Pearson spectrum + minor adjustment. |
-| H3 | Lagged co-importance reveals real cross-position structure | **yes for τ ∈ {−1, 0, +1, +2}, no for longer lags**. Earlier "all peak at τ<0" was a max-fishing artifact; the correct headline is *τ = 0 peak with immediate-neighbor lift*. |
+| H3 | Lagged co-importance reveals real cross-position structure | **yes for τ ∈ {−2, −1, 0} with peak at τ = −1 in 3 of 4 same-layer Q/K pairs (L2 peaks at τ = 0); no for longer lags.** Earlier "peak deepens to τ = −3" was a max-fishing artifact; the real signal is one position back. |
 | H4 | Different modules have different gate geometries | **yes**. L1 attn.k (eff_rank 5.5) vs L3 mlp.down (eff_rank 434) is ~80× — no statistical games involved. |

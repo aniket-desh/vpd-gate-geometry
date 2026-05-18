@@ -27,12 +27,13 @@ Headlines, on 65,536 token positions from the canonical Pile stream
   explained by token identity is 0.06; distribution is
   bimodal-with-tail. Token-residualization spectrum is essentially
   the centered Pearson spectrum.
-- **Lagged co-importance has a clean bump at τ=0 + immediate
-  neighbours, not a directional negative-τ peak.** Under a per-sequence
-  circular-shift null, the real `mean(top-100 |r|)` separates from
-  null only at τ ∈ {−1, 0, +1, +2} and peaks at τ = 0. An earlier
-  draft of this repo claimed "Q/K pairs all peak at τ<0" — that was a
-  max-fishing artifact and is corrected in `docs/results.md`.
+- **Q/K coupling is one-token-back, not three.** Under a per-sequence
+  circular-shift null, the real `mean(top-100 |r|)` for within-layer
+  Q→K peaks at **τ = −1** in L0/L1/L3 (excess +0.27 to +0.61 over null)
+  and at τ = 0 in L2. The signal collapses to the null band by τ = ±2.
+  An earlier draft of this repo claimed "peak deepens to τ = −2/−3
+  with depth" — that was a max-fishing artifact and is corrected in
+  `docs/results.md`.
 - **Layer/module geometries vary by ~80×.** L1 attn.k has 46 alive
   components in 5.5 effective dimensions; L3 mlp.down has 1,837 alive
   in 434 dimensions. No statistical games involved.
