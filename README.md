@@ -65,7 +65,7 @@ external/param-decomp/.venv/bin/python -m vpd_gate_geometry.run_analysis \
     --run-path runs/pile-4L/model_400000.pth \
     --target-model-path runs/pretrain-4L/files/model_step_99999.pt \
     --cache-gate-matrix outputs/gate_geometry/cache/pile4L.pt \
-    --output-dir outputs/gate_geometry/pile4L_v1 \
+    --output-dir outputs/gate_geometry/pile4L_v2 \
     --n-batches 16 --batch-size 8 \
     --max-components 4096 --max-lag 6 \
     --lagged-top-k 512 \
