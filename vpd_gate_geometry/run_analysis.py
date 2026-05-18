@@ -48,15 +48,27 @@ def run(cfg: AnalysisConfig) -> dict[str, Any]:
 
     print(f"[vpd-gate-geometry] backend={cfg.backend} output_dir={out}", flush=True)
 
-    batches = list(iter_gate_batches(cfg))
-    assert batches, "no batches yielded by backend"
-    modules = list(batches[0].gates.keys())
-    print(f"[vpd-gate-geometry] {len(batches)} batches, "
-          f"modules={modules}", flush=True)
-
-    gm = gm_mod.build_gate_matrix(batches, modules=modules)
-    print(f"[vpd-gate-geometry] gate matrix: G={tuple(gm.G.shape)} "
-          f"N_rows={gm.n_rows} C_total={gm.n_components}", flush=True)
+    if cfg.load_gate_matrix:
+        cached = torch.load(cfg.load_gate_matrix, weights_only=False)
+        gm = cached["gm"]
+        modules = cached["modules"]
+        print(f"[vpd-gate-geometry] loaded cached gate matrix from "
+              f"{cfg.load_gate_matrix} G={tuple(gm.G.shape)}", flush=True)
+    else:
+        batches = list(iter_gate_batches(cfg))
+        assert batches, "no batches yielded by backend"
+        modules = list(batches[0].gates.keys())
+        print(f"[vpd-gate-geometry] {len(batches)} batches, "
+              f"modules={modules}", flush=True)
+        gm = gm_mod.build_gate_matrix(batches, modules=modules)
+        print(f"[vpd-gate-geometry] gate matrix: G={tuple(gm.G.shape)} "
+              f"N_rows={gm.n_rows} C_total={gm.n_components}", flush=True)
+        if cfg.cache_gate_matrix:
+            from pathlib import Path as _P
+            _P(cfg.cache_gate_matrix).parent.mkdir(parents=True, exist_ok=True)
+            torch.save({"gm": gm, "modules": modules}, cfg.cache_gate_matrix)
+            print(f"[vpd-gate-geometry] cached gate matrix -> "
+                  f"{cfg.cache_gate_matrix}", flush=True)
 
     stats = spectral.gate_stats(gm.G, alive_threshold=cfg.alive_threshold)
     per_module_stats = spectral.all_module_stats(gm, alive_threshold=cfg.alive_threshold)

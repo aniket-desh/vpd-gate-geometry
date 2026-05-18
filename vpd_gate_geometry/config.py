@@ -47,6 +47,10 @@ class AnalysisConfig:
     # Local-override paths for the repo backend (skip W&B auth)
     target_model_path: str = ""      # local path to pretrained target-LM checkpoint
 
+    # Gate-matrix caching (avoid re-extracting 10+ min of forward passes)
+    cache_gate_matrix: str = ""      # write the post-build GateMatrix to this .pt file
+    load_gate_matrix: str = ""       # if set, skip backend extraction and load from here
+
     # Residualization
     residualize_max_vocab_tokens: int = 4096
     residualize_min_count: int = 16
@@ -93,6 +97,10 @@ def build_arg_parser() -> argparse.ArgumentParser:
     p.add_argument("--harvest-dir", type=str, default="")
     p.add_argument("--target-model-path", type=str, default="",
                    help="Local path to pretrained target-LM checkpoint, bypasses W&B fetch.")
+    p.add_argument("--cache-gate-matrix", type=str, default="",
+                   help="If set, save the built GateMatrix as a .pt file here for later reuse.")
+    p.add_argument("--load-gate-matrix", type=str, default="",
+                   help="If set, skip extraction and load a GateMatrix from this .pt file.")
 
     p.add_argument("--residualize-max-vocab-tokens", type=int, default=4096)
     p.add_argument("--residualize-min-count", type=int, default=16)
@@ -131,6 +139,8 @@ def config_from_argv(argv: list[str] | None = None) -> AnalysisConfig:
         sampling=args.sampling,
         harvest_dir=args.harvest_dir,
         target_model_path=args.target_model_path,
+        cache_gate_matrix=args.cache_gate_matrix,
+        load_gate_matrix=args.load_gate_matrix,
         residualize_max_vocab_tokens=args.residualize_max_vocab_tokens,
         residualize_min_count=args.residualize_min_count,
         residualize_shrinkage=args.residualize_shrinkage,
