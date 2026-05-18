@@ -70,10 +70,11 @@ def fit_token_baseline(
     rare_row = V_eff
     token_count = torch.zeros(V_eff + 1, device=device)
     token_sum = torch.zeros(V_eff + 1, C, device=device)
-    # Map every input row to its target table row.
-    row_lookup = torch.full((int(token_ids.max().item()) + 1,), rare_row, dtype=torch.long, device=device)
-    for tok, row in id_to_row.items():
-        row_lookup[tok] = row
+    # Vectorized id -> row lookup: pre-fill with `rare_row`, then scatter the
+    # kept token rows in one shot (avoids a Python loop with GPU syncs).
+    max_tok = int(token_ids.max().item()) + 1
+    row_lookup = torch.full((max_tok,), rare_row, dtype=torch.long, device=device)
+    row_lookup[unique] = torch.arange(V_eff, device=device)
     rows = row_lookup[token_ids]
     token_sum.index_add_(0, rows, G)
     token_count.index_add_(0, rows, torch.ones_like(rows, dtype=G.dtype))
@@ -93,14 +94,18 @@ def fit_token_baseline(
 
 
 def residualize_gates(G: torch.Tensor, token_ids: torch.Tensor, baseline: TokenBaseline) -> torch.Tensor:
+    device = G.device
     rare = baseline.rare_row
-    row_lookup = torch.full(
-        (int(token_ids.max().item()) + 1,), rare, dtype=torch.long, device=G.device
-    )
-    for tok, row in baseline.id_to_row.items():
-        row_lookup[tok] = row
+    max_tok = int(token_ids.max().item()) + 1
+    row_lookup = torch.full((max_tok,), rare, dtype=torch.long, device=device)
+    # Vectorized scatter of kept token-ids.
+    keys = torch.tensor(list(baseline.id_to_row.keys()), dtype=torch.long, device=device)
+    vals = torch.tensor(list(baseline.id_to_row.values()), dtype=torch.long, device=device)
+    row_lookup[keys] = vals
     rows = row_lookup[token_ids]
-    return G - baseline.mu[None, :] - baseline.token_offset[rows]
+    mu = baseline.mu.to(device)
+    offset = baseline.token_offset.to(device)
+    return G - mu[None, :] - offset[rows]
 
 
 def explained_variance_by_token(

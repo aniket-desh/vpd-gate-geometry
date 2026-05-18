@@ -30,27 +30,18 @@ class LaggedKernels:
 
 
 def _sequence_views(gm: GateMatrix) -> list[tuple[int, int, int]]:
-    """Return [(batch_idx, row_start, row_end), ...] sorted by batch.
+    """Return [(seq_idx, row_start, row_end), ...] one entry per token sequence.
 
-    Within each batch the rows are guaranteed contiguous in `gm.G`
-    (build_gate_matrix concatenates in batch order), so we can index
-    them as a single 2D [T, C] slice.
+    `build_gate_matrix` flattens [B, T, C] to [B*T, C] in row-major
+    order, so position 0 starts each sequence. We detect those starts
+    via `pos_idx == 0`, which is robust to any batch packing.
     """
-    out: list[tuple[int, int, int]] = []
-    batch = gm.batch_idx
-    n = batch.numel()
-    if n == 0:
-        return out
-    start = 0
-    cur = int(batch[0].item())
-    for i in range(1, n):
-        b = int(batch[i].item())
-        if b != cur:
-            out.append((cur, start, i))
-            start = i
-            cur = b
-    out.append((cur, start, n))
-    return out
+    pos = gm.pos_idx
+    if pos.numel() == 0:
+        return []
+    starts = torch.nonzero(pos == 0, as_tuple=False).squeeze(-1).tolist()
+    ends = starts[1:] + [pos.numel()]
+    return [(i, int(s), int(e)) for i, (s, e) in enumerate(zip(starts, ends))]
 
 
 def _module_columns(gm: GateMatrix, module: str | None) -> torch.Tensor:
@@ -68,11 +59,14 @@ def lagged_kernel(
     lags: list[int] | None = None,
     top_k: int = 256,
     normalize: bool = True,
+    device: str = "cpu",
 ) -> LaggedKernels:
     """Compute lagged correlations between components in module_a and module_b.
 
     `module_a = module_b = None` means "all modules" on both sides, which
     is only safe for very small C (e.g. the mock backend's defaults).
+    When `device="cuda"` the per-sequence cross-products are accumulated
+    on GPU; the result is moved back to CPU before returning.
     """
     lags = lags if lags is not None else [-2, -1, 0, 1, 2]
     cols_a = _module_columns(gm, module_a)
@@ -82,6 +76,9 @@ def lagged_kernel(
 
     G_a_top, sel_a = restrict_to_top_components(G_a, top_k)
     G_b_top, sel_b = restrict_to_top_components(G_b, top_k)
+    if device != "cpu" and torch.cuda.is_available():
+        G_a_top = G_a_top.to(device, dtype=torch.float32)
+        G_b_top = G_b_top.to(device, dtype=torch.float32)
     keys_a = [gm.keys[int(cols_a[int(i)])] for i in sel_a.tolist()]
     keys_b = [gm.keys[int(cols_b[int(i)])] for i in sel_b.tolist()]
 
@@ -90,16 +87,17 @@ def lagged_kernel(
 
     Ca = G_a_top.shape[1]
     Cb = G_b_top.shape[1]
+    accum_dev = G_a_top.device
     # Pearson correlation accumulated per-lag from sufficient statistics:
     #     E[ab] - E[a]E[b]
     #     ─────────────────
     #     std_a · std_b
     # where the expectations are over the τ-valid slice (a_part, b_part).
-    sum_ab: dict[int, torch.Tensor] = {tau: torch.zeros((Ca, Cb)) for tau in lags}
-    sum_a:  dict[int, torch.Tensor] = {tau: torch.zeros(Ca) for tau in lags}
-    sum_b:  dict[int, torch.Tensor] = {tau: torch.zeros(Cb) for tau in lags}
-    sum_a2: dict[int, torch.Tensor] = {tau: torch.zeros(Ca) for tau in lags}
-    sum_b2: dict[int, torch.Tensor] = {tau: torch.zeros(Cb) for tau in lags}
+    sum_ab: dict[int, torch.Tensor] = {tau: torch.zeros((Ca, Cb), device=accum_dev) for tau in lags}
+    sum_a:  dict[int, torch.Tensor] = {tau: torch.zeros(Ca, device=accum_dev) for tau in lags}
+    sum_b:  dict[int, torch.Tensor] = {tau: torch.zeros(Cb, device=accum_dev) for tau in lags}
+    sum_a2: dict[int, torch.Tensor] = {tau: torch.zeros(Ca, device=accum_dev) for tau in lags}
+    sum_b2: dict[int, torch.Tensor] = {tau: torch.zeros(Cb, device=accum_dev) for tau in lags}
     n_pairs: dict[int, int] = {tau: 0 for tau in lags}
 
     for _, start, end in views:
@@ -134,9 +132,9 @@ def lagged_kernel(
             var_a = (sum_a2[tau] / n - mean_a * mean_a).clamp_min(1e-12)
             var_b = (sum_b2[tau] / n - mean_b * mean_b).clamp_min(1e-12)
             denom = torch.sqrt(torch.outer(var_a, var_b))
-            K_out[tau] = (cov / denom).clamp_(-1.0, 1.0)
+            K_out[tau] = (cov / denom).clamp_(-1.0, 1.0).cpu()
         else:
-            K_out[tau] = cov
+            K_out[tau] = cov.cpu()
 
     return LaggedKernels(
         lags=lags,

@@ -70,6 +70,11 @@ def run(cfg: AnalysisConfig) -> dict[str, Any]:
             print(f"[vpd-gate-geometry] cached gate matrix -> "
                   f"{cfg.cache_gate_matrix}", flush=True)
 
+    # Stage onto GPU once; analysis stays on GPU until the small final stats.
+    use_cuda = cfg.device == "cuda" and torch.cuda.is_available()
+    work_device = "cuda" if use_cuda else "cpu"
+    print(f"[vpd-gate-geometry] analysis device: {work_device}", flush=True)
+
     stats = spectral.gate_stats(gm.G, alive_threshold=cfg.alive_threshold)
     per_module_stats = spectral.all_module_stats(gm, alive_threshold=cfg.alive_threshold)
 
@@ -88,11 +93,19 @@ def run(cfg: AnalysisConfig) -> dict[str, Any]:
         )
     else:
         gm_top = gm_alive
+    if use_cuda:
+        gm_top = gm_mod.GateMatrix(
+            G=gm_top.G.to(work_device, dtype=torch.float32),
+            keys=gm_top.keys,
+            token_ids=gm_top.token_ids.to(work_device),
+            batch_idx=gm_top.batch_idx,
+            pos_idx=gm_top.pos_idx,
+        )
     print(f"[vpd-gate-geometry] alive={int(alive_keep.sum().item())} "
-          f"kernel C={gm_top.n_components}", flush=True)
+          f"kernel C={gm_top.n_components} on {work_device}", flush=True)
 
-    K_raw = spectral.cosine_kernel_gpu(gm_top.G, device=cfg.device)
-    eigvals_raw, _ = spectral.spectral_decompose(K_raw)
+    K_raw = spectral.cosine_kernel_gpu(gm_top.G, device=work_device)
+    eigvals_raw, _ = spectral.spectral_decompose(K_raw, device=work_device)
     eff_rank_raw = spectral.effective_rank(eigvals_raw)
     pr_raw = spectral.participation_ratio(eigvals_raw)
     order = spectral.cluster_order_from_kernel(K_raw, n_clusters=min(8, gm_top.n_components // 4 + 1))
@@ -106,9 +119,9 @@ def run(cfg: AnalysisConfig) -> dict[str, Any]:
         shrinkage=cfg.residualize_shrinkage,
     )
     G_resid = residualize.residualize_gates(gm_top.G, gm_top.token_ids, baseline)
-    r2 = residualize.explained_variance_by_token(gm_top.G, G_resid)
-    K_resid = spectral.cosine_kernel_gpu(G_resid, device=cfg.device)
-    eigvals_resid, _ = spectral.spectral_decompose(K_resid)
+    r2 = residualize.explained_variance_by_token(gm_top.G, G_resid).cpu()
+    K_resid = spectral.cosine_kernel_gpu(G_resid, device=work_device)
+    eigvals_resid, _ = spectral.spectral_decompose(K_resid, device=work_device)
 
     # Lagged kernel: prefer user-specified pair, otherwise default to a
     # meaningful within-layer Q/K pair if present, else the first two modules.
@@ -128,6 +141,7 @@ def run(cfg: AnalysisConfig) -> dict[str, Any]:
         lags=lags,
         top_k=cfg.lagged_top_k,
         normalize=True,
+        device=work_device,
     )
     top_pairs = lagged.top_lagged_pairs(lagged_kernels, n_top=15)
     lag_profile = torch.tensor(

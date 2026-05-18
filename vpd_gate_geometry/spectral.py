@@ -68,13 +68,22 @@ def gram_then_cosine(G: torch.Tensor, eps: float = 1e-8) -> torch.Tensor:
 
 
 def spectral_decompose(
-    K: torch.Tensor, k: int | None = None
+    K: torch.Tensor, k: int | None = None, device: str | None = None
 ) -> tuple[torch.Tensor, torch.Tensor]:
-    """Eigendecomposition of a symmetric kernel; returns (eigvals desc, eigvecs)."""
+    """Eigendecomposition of a symmetric kernel; returns (eigvals desc, eigvecs).
+
+    By default runs on whatever device K is on. Pass `device="cuda"` to
+    force the eigendecomp onto GPU for big (>=1024 dim) kernels — torch
+    eigh on H200 is much faster than CPU at that scale.
+    """
+    use_dev = device if device is not None else str(K.device)
     K_sym = 0.5 * (K + K.T)
+    if use_dev != str(K.device):
+        K_sym = K_sym.to(use_dev)
+    # eigh on cuda needs float32 / float64
     eigvals, eigvecs = torch.linalg.eigh(K_sym)
-    eigvals = eigvals.flip(0)
-    eigvecs = eigvecs.flip(1)
+    eigvals = eigvals.flip(0).cpu()
+    eigvecs = eigvecs.flip(1).cpu()
     if k is not None:
         eigvals = eigvals[:k]
         eigvecs = eigvecs[:, :k]
