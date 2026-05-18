@@ -36,6 +36,7 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--output-dir", type=Path, required=True)
     p.add_argument("--max-lag", type=int, default=6)
     p.add_argument("--top-k", type=int, default=512)
+    p.add_argument("--device", type=str, default="cuda")
     args = p.parse_args(argv)
 
     print(f"[sweep] loading cache {args.cache} ...", flush=True)
@@ -63,6 +64,7 @@ def main(argv: list[str] | None = None) -> int:
             lags=lags,
             top_k=args.top_k,
             normalize=True,
+            device=args.device,
         )
         top_pairs = lagged.top_lagged_pairs(kernels, n_top=15)
         lag_profile = torch.tensor(

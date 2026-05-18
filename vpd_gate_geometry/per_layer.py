@@ -68,7 +68,7 @@ def main(argv: list[str] | None = None) -> int:
             )
 
         K = spectral.cosine_kernel_gpu(G_alive, device=args.device)
-        eigvals, _ = spectral.spectral_decompose(K)
+        eigvals, _ = spectral.spectral_decompose(K, device=args.device)
         eff_rank = spectral.effective_rank(eigvals)
         pr = spectral.participation_ratio(eigvals)
 
