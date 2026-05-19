@@ -14,12 +14,14 @@ below reflects the re-rendered state.
 ## 0. `outputs/gate_geometry/pile4L_v2/plots/10_kernel_real_vs_null.png`  ★ tactile evidence
 
 **Intended caption.** *Cosine kernel on the top-4,096 alive VPD
-components (left) and on a row+column-shuffled version of the same
-gate matrix (right). Both panels use the same vmin/vmax, the same
-diverging colormap, and the same row ordering (sign-of-leading-eigvec
-spectral order on the real kernel). The dense block in the upper-left
-of the real panel is the same block that the spectrum and effective
-rank diagnose; it is visibly absent from the shuffled-null panel.*
+components (left) compared to a column-wise row-shuffled null (right)
+that preserves each component's marginal distribution while destroying
+all cross-component co-activation. Both panels use the same vmin/vmax,
+the same diverging colormap, and the same row ordering
+(sign-of-leading-eigvec spectral order on the real kernel). The dense
+block in the upper-left of the real panel is the same block that the
+spectrum and effective rank diagnose; it disappears under the
+shuffled control.*
 
 | check | status |
 | --- | --- |
@@ -39,10 +41,10 @@ visceral in one figure.
 
 **Intended caption.** *Top-4,096 alive VPD gate eigenspectra: raw
 cosine kernel (purple), centered Pearson kernel (teal), and a
-row+column-shuffled cosine null (gray). The raw cosine λ₁ is partly
-shared-base-rate alignment (the null λ₁ is comparable); the cleaner
-"real structure" claim is the separation of the leading few hundred
-modes from the null across all three real curves.*
+column-wise row-shuffled cosine null (gray). The raw cosine λ₁ is
+partly shared-base-rate alignment (the null λ₁ is comparable); the
+cleaner "real structure" claim is the separation of the leading few
+hundred modes from the null across all three real curves.*
 
 | check | status |
 | --- | --- |

@@ -1,6 +1,6 @@
 # Descriptive geometry of the VPD causal-importance field
 
-**Run:** `wandb:goodfire/spd/runs/s-55ea3f9b`  (VPD paper, April 2026 —
+**Run:** `wandb:goodfire/spd/runs/s-55ea3f9b`  (VPD paper, April 2026;
 `pile_llama_simple_mlp-4L`).
 **Hardware:** single NVIDIA H200, 144 GB VRAM.
 **Status:** v2 sweep complete with null controls + kernel-variant
@@ -15,11 +15,11 @@ where my own first-pass statistics were overclaiming.
 
 ## TL;DR
 
-1. **The gate field has real geometry beyond a row-shuffled null.** On
-   the top 4,096 alive components, the cosine kernel's first ~500
-   eigenvalues sit visibly above the shuffled-null curve; the rest of
-   the spectrum drops below it. Effective rank 941 (cosine) vs 3,418
-   (shuffled-cosine null).
+1. **The gate field has real geometry beyond a column-wise
+   row-shuffled null.** On the top 4,096 alive components, the cosine
+   kernel's first ~500 eigenvalues sit visibly above the shuffled-null
+   curve; the rest of the spectrum drops below it. Effective rank 941
+   (cosine) vs 3,418 (shuffled-cosine null).
 2. **Most of the leading cosine eigenvalue is base-rate alignment, not
    mechanism structure.** Top eigenvalue: cosine 206, Pearson (centered)
    150, shuffled-cosine null 150. Reading anything off the cosine λ₁
@@ -88,18 +88,20 @@ authentication, since `goodfire/spd` is a `USER_READ` project. See
 Two observations:
 
 - The **top eigenvalue is dominated by base-rate alignment**. The
-  cosine kernel reports 206, but the same kernel computed on
-  row-shuffled gates (which destroys every cross-row coupling) still
-  reports 150 — because the cosine kernel normalizes by per-column
-  norms but not per-column means, so the global "mean direction" of
-  the active components persists under shuffling. The honest top
-  eigenvalue is the Pearson one (~150), and it is only ~30 units above
-  what shuffling alone produces.
+  cosine kernel reports 206, but the same kernel computed on a
+  column-wise row-shuffled copy of $G$ (which destroys every
+  cross-component co-activation while preserving each component's
+  marginal distribution) still reports 150. That happens because the
+  cosine kernel normalizes by per-column norms but not per-column
+  means, so the global "mean direction" of the active components
+  persists under shuffling. The honest top eigenvalue is the Pearson
+  one (~150), and it is only ~30 units above what shuffling alone
+  produces.
 - The **shape of the spectrum** is real. Beyond the first eigenvalue,
   the shuffled null is essentially flat at 1.51 (entries 2 through
   ~4000), while the real cosine spectrum drops smoothly over three
   decades. The real spectrum sits above the null curve up to roughly
-  index 500, then crosses below — exactly the signature of a kernel
+  index 500, then crosses below; exactly the signature of a kernel
   that concentrates variance in the top few hundred modes. **The first
   ~500 modes of the gate field carry real structure beyond shuffle
   baseline.**
@@ -177,7 +179,7 @@ Two things are now clear that were not before:
   147,456-pair distribution.
 
 **Corrected verdict:** there *is* genuine cross-position structure in
-L2 Q/K — same-position and immediate-neighbor coupling beat the null
+L2 Q/K, where same-position and immediate-neighbor coupling beat the null
 by 40–60% (excess ~0.14, null floor ~0.10). There is *no* evidence
 for the "Q at later position reaches back several tokens to K"
 narrative I asserted in v1. Anything past τ = ±2 is at the noise floor.
@@ -199,7 +201,7 @@ attention.q_proj → attention.k_proj pairs.
 For three of the four layers the peak is at **τ = −1, not τ = 0**.
 That direction is consistent with "the query gate at destination
 position t couples maximally with the key gate at the previous source
-position t − 1" — i.e. one-token-back attention. L2 is the exception
+position t − 1", i.e. one-token-back attention. L2 is the exception
 and peaks at τ = 0 (same-token coupling). All four peaks sit well
 above the circular-shift null distribution.
 
@@ -222,7 +224,7 @@ peaks. Looking at the L0 q→k full curve as the cleanest example,
 | +5 | 0.272 | 0.184 | +0.087 |
 | +6 | 0.414 | 0.100 | +0.314 |
 
-— a sharp asymmetric peak at τ ∈ {−1, 0} with substantial neighbor
+a sharp asymmetric peak at τ ∈ {−1, 0} with substantial neighbor
 support at τ = −2, −3, then collapse to the null band for τ ≥ +1.
 The small uptick at τ = +5, +6 is suspicious (could be a sequence
 boundary or window-edge artifact at our seq_len = 512) and would
@@ -328,4 +330,4 @@ of magnitude in effective rank.
 | H1 | Raw gate co-importance is highly structured | **partial yes**. First ~500 cosine eigenvalues separate from shuffle null. Most of the top cosine eigenvalue is mean alignment, not mechanism structure. Use Pearson, not cosine, as headline. |
 | H2 | Token identity explains a nontrivial but incomplete fraction | **yes, modestly**. Median R² 0.06, bimodal-with-tail. Token-residualization spectrum is essentially the centered Pearson spectrum + minor adjustment. |
 | H3 | Lagged co-importance reveals real cross-position structure | **yes for τ ∈ {−2, −1, 0} with peak at τ = −1 in 3 of 4 same-layer Q/K pairs (L2 peaks at τ = 0); no for longer lags.** Earlier "peak deepens to τ = −3" was a max-fishing artifact; the real signal is one position back. |
-| H4 | Different modules have different gate geometries | **yes**. L1 attn.k (eff_rank 5.5) vs L3 mlp.down (eff_rank 434) is ~80× — no statistical games involved. |
+| H4 | Different modules have different gate geometries | **yes**. L1 attn.k (eff_rank 5.5) vs L3 mlp.down (eff_rank 434) is ~80×, with no statistical games involved. |

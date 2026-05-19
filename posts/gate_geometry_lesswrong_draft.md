@@ -6,28 +6,27 @@ at the geometry of when those subcomponents are causally important.*
 TL;DR:
 
 - VPD ([Bushnaq et al., 2026](https://www.goodfire.ai/research/interpreting-lm-parameters))
-  produces a causal-importance gate field $g^\ell_{b,t,c}\in[0,1]$
-  that says which rank-one parameter subcomponents are needed on each
-  token. I treat that field as a geometric object on its own.
-- On the canonical 4-layer Pile model, the cosine co-importance kernel
-  on the top 4,096 alive subcomponents has visible structure beyond a
-  row-shuffled null, but the leading raw-cosine eigenvalue is partly
-  shared-base-rate alignment. The cleaner story is the centered Pearson
-  kernel and the separation of the leading few hundred modes from the
-  null spectrum.
-- Token identity explains a modest fraction of the top-K gate field
-  (median per-component $R^2 = 0.06$, mean 0.13), with a clear lexical
-  tail. It is not the dominant story, but it is not negligible either.
-- Lagged Q/K co-importance shows a real, *narrow* cross-position signal:
-  in three of four layers the mean-top-100 $|r|$ peaks at $\tau = -1$
-  (the query gate at position $t$ couples maximally with the key gate
-  at the previous source position), with L2 peaking at $\tau = 0$. Past
-  $\tau = \pm 2$, every layer collapses into the circular-shift null.
-- Module geometries vary by roughly two orders of magnitude in effective
-  rank within the same decomposition: L1 `attn.k_proj` lives in $\sim 5.5$
-  effective dimensions, L3 `mlp.down_proj` in $\sim 434$.
+  produces a causal-importance gate field $g^\ell_{b,t,c}\in[0,1]$. I
+  treat that field as a geometric object on its own.
+- The cosine co-importance kernel on the top-4,096 alive components
+  has visible structure beyond a shuffled null, but the leading
+  cosine eigenvalue is partly shared-base-rate alignment. Centered
+  Pearson is the cleaner headline statistic.
+- Token identity explains a modest slice (median per-component
+  $R^2 = 0.06$, mean 0.13) with a clear lexical tail.
+- Within-layer Q/K coupling is real and *narrow*: in three of four
+  layers the mean-top-100 $|r|$ peaks at $\tau = -1$ (the query gate
+  at position $t$ couples with the key gate one position earlier).
+  L2 peaks at $\tau = 0$.
+- Past $\tau = \pm 2$, every layer collapses into the circular-shift
+  null. The longer-range "Q reaches back several tokens" story from
+  the v1 draft did not survive that null.
+- Module geometries vary by roughly two orders of magnitude in
+  effective rank within the same decomposition: L1 `attn.k_proj`
+  lives in $\sim 5.5$ effective dimensions, L3 `mlp.down_proj` in
+  $\sim 434$.
 
-![Real cosine kernel on top-4096 alive VPD components (left) compared to the same kernel under a row+column shuffle that destroys cross-row alignment (right), under shared ordering and colour scale. The dense upper-left block in the real panel is visibly absent on the right.](../outputs/gate_geometry/pile4L_v2/plots/10_kernel_real_vs_null.png)
+![Cosine kernel on the top-4,096 alive VPD components (left) compared to a column-wise row-shuffled null (right) that preserves each component's marginal distribution but destroys all cross-component co-activation. Both panels share the same row ordering, colormap, and colour scale; the dense upper-left block in the real panel is visibly absent on the right.](../outputs/gate_geometry/pile4L_v2/plots/10_kernel_real_vs_null.png)
 
 Code, data, and full numbers:
 [github.com/aniket-desh/vpd-gate-geometry](https://github.com/aniket-desh/vpd-gate-geometry).
@@ -122,25 +121,28 @@ subset and its eigenspectrum. The raw numbers:
 
 The same comparison is more visceral as a pair of heatmaps:
 
-![Real cosine kernel (left) and shuffled-null cosine kernel (right) on the top-4096 alive components, under the same row ordering and colour scale. The dense block in the upper-left of the real panel survives the shuffled control, which destroys all cross-row alignment. This is the same block the spectrum was diagnosing.](../outputs/gate_geometry/pile4L_v2/plots/10_kernel_real_vs_null.png)
+![Real cosine kernel (left) and column-wise row-shuffled cosine kernel (right) on the top-4,096 alive components, plotted under the same row ordering, colormap, and colour scale. The dense upper-left block in the real panel disappears under the shuffled control. This is the same block the spectrum is diagnosing.](../outputs/gate_geometry/pile4L_v2/plots/10_kernel_real_vs_null.png)
 
 The left panel uses the spectral row ordering (sign of leading
 eigenvector, then second eigenvector) that surfaces the dominant
 mechanism cluster of $\sim 500\text{--}800$ components. The right
-panel applies the *same row ordering* to the row+column-shuffled
-gate matrix, which preserves each component's marginal histogram
-but breaks every cross-row coupling. The block in the upper-left
-of the left panel is the structure; the lack of any analogous block
-in the right panel is the control.
+panel applies the *same row ordering* to a column-wise row-shuffled
+copy of the gate matrix: each component column is independently
+re-shuffled along the row axis, preserving every per-component
+marginal histogram while destroying all cross-component
+co-activation. The block in the upper-left of the left panel is the
+structure; the absence of any analogous block in the right panel is
+the control.
 
 The plot says something subtle that the v1 cosine headline got wrong.
 The raw cosine kernel reports a top eigenvalue of 206. That looks
-impressive until you compute the same cosine kernel on a
-row-permuted, column-permuted version of $G$, which destroys every
-cross-row coupling. The shuffled cosine kernel still has a top
-eigenvalue of 150. That's because the cosine kernel normalizes by
-per-column $L^2$ norm but not per-column mean, so the global "mean
-direction" of the active components survives row shuffling.
+impressive until you compute the same cosine kernel on the
+column-wise row-shuffled $G$, which destroys every cross-component
+co-activation while leaving the per-component distributions intact.
+The shuffled cosine kernel still has a top eigenvalue of 150. That's
+because the cosine kernel normalizes by per-column $L^2$ norm but
+not per-column mean, so the global "mean direction" of the active
+components survives row shuffling.
 
 The honest claim is the **centered Pearson** top eigenvalue ($\approx 150$),
 and even more importantly, the *shape* of the spectrum. Beyond the
@@ -221,7 +223,7 @@ module $B$'s within-sequence marginal histogram and autocorrelation
 are preserved, but every cross-module position alignment is broken.
 Comparing real $|r|$ to null is then a well-posed question.
 
-![Lagged co-importance for h.2.attn.q_proj → h.2.attn.k_proj. The green line (mean of top-100 |r|) is the actual signal. The dotted gray line (max |r|) saturates at lags that the null distribution shows are noise. Real signal rises above null only for τ ∈ {−1, 0, +1, +2}.](../outputs/gate_geometry/pile4L_v2/plots/07_lag_profile.png)
+![L2 Q→K lagged co-importance (full module names: `h.2.attn.q_proj → h.2.attn.k_proj`). The green line is mean of top-100 |r|; the dotted gray line is max |r| over all 147k pairs at each lag; the gray band is the per-sequence circular-shift null distribution (mean to 95th percentile across 6 shuffles). Negative τ means the key gate is earlier than the query gate. The real signal rises above null only for τ ∈ {−1, 0, +1, +2}.](../outputs/gate_geometry/pile4L_v2/plots/07_lag_profile.png)
 
 The corrected within-layer Q$\to$K results:
 
@@ -238,7 +240,7 @@ gate at destination position $t$ couples maximally with the key gate
 at the previous source position $t - 1$, i.e. one-token-back attention.
 L2 is the exception and peaks at $\tau = 0$ (same-token coupling).
 
-![L0 within-layer Q→K lagged profile. Sharp asymmetric peak at τ=-1 with neighbours at τ=0 and τ=-2; collapses into the null band by τ=+1.](../outputs/gate_geometry/lagged_sweep_qk/h_0_attn_q_proj__h_0_attn_k_proj__lag_profile.png)
+![L0 within-layer Q→K lagged profile (full module names: `h.0.attn.q_proj → h.0.attn.k_proj`). Sharp asymmetric peak at τ = −1 with neighbours at τ = 0 and τ = −2; collapses into the circular-shift null band by τ = +1. Negative τ means the key gate is earlier than the query gate.](../outputs/gate_geometry/lagged_sweep_qk/h_0_attn_q_proj__h_0_attn_k_proj__lag_profile.png)
 
 Past $\tau = \pm 2$, every same-layer Q$\to$K pair drops into the
 null band. Anything I previously read off the $\tau \in \{-3, -6\}$
@@ -280,16 +282,18 @@ the highlights:
 
 L1 attention is the standout: 46 alive components in `attn.k_proj`
 that together occupy roughly 5.5 effective dimensions, and only 10
-alive in `attn.q_proj` at 7.0 effective dimensions. That's the
-model using L1 attention with a tiny mechanism budget. L3 `mlp.down`
-is the opposite shape: a wide, redundant 1,837-component dictionary
-in $\sim 434$ effective dimensions.
+alive in `attn.q_proj` at 7.0 effective dimensions. The gate field
+assigns L1 attention a tiny effective-dimensional budget; whether
+that reflects a small set of mechanisms or a vestigial subspace is
+a question for ablations, not for this descriptive probe. L3
+`mlp.down` is the opposite shape: a wide, redundant 1,837-component
+dictionary in $\sim 434$ effective dimensions.
 
 The L1-vs-L3 axis spans roughly two orders of magnitude in effective
 rank within the same model and decomposition. H4 from the project
 plan ("different modules have different gate geometries") is
-unambiguously supported, and unlike H3 it does not need any null
-discipline to defend.
+strongly supported by this descriptive statistic, and unlike H3 it
+does not need any null discipline to defend.
 
 ## What survived the null controls?
 

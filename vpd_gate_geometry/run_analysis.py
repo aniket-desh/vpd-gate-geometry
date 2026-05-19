@@ -142,13 +142,13 @@ def run(cfg: AnalysisConfig) -> dict[str, Any]:
     K_corr_cpu = K_corr.cpu() if K_corr.is_cuda else K_corr
     eigvals_corr, _ = spectral.spectral_decompose(K_corr, device=work_device)
 
-    # Shuffled-row null on the cosine kernel — destroys all between-row
-    # alignment but keeps each column's marginal. The resulting kernel
-    # is the "ambient" baseline the real spectrum has to beat.
+    # Column-wise row-shuffled null on the cosine kernel: each column
+    # is independently re-shuffled along the row axis, which preserves
+    # every per-component marginal distribution while destroying all
+    # cross-component co-activation. This is the "ambient" baseline the
+    # real spectrum has to beat.
     perm = torch.randperm(gm_top.G.shape[0], device=gm_top.G.device)
     G_shuf = gm_top.G[perm]
-    # Independent permutation per column so we don't accidentally
-    # preserve any single-direction structure.
     for c in range(0, gm_top.G.shape[1], 1024):
         slab = G_shuf[:, c:c + 1024]
         col_perm = torch.argsort(torch.rand(slab.shape, device=slab.device), dim=0)
@@ -347,14 +347,13 @@ def run(cfg: AnalysisConfig) -> dict[str, Any]:
                 "shuffled null": "null",
             },
         )
-        # Side-by-side real-vs-null kernel heatmaps under the same row order
-        # — the dense block in the real panel should be visibly absent
-        # in the null panel.
+        # Side-by-side real-vs-null kernel heatmaps under the same row order.
+        # The dense block in the real panel should disappear under the null.
         plotting.plot_kernel_real_vs_null(
             K_raw, K_shuf,
             plot_dir / "10_kernel_real_vs_null.png",
             order=order,
-            title="Cosine kernel: real vs shuffled null  (same component ordering)",
+            title="Co-importance kernel: real vs shuffled null",
         )
 
     print(f"[vpd-gate-geometry] wrote summary -> {out / 'summary.json'}", flush=True)

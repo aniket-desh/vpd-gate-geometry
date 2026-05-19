@@ -20,7 +20,7 @@ Headlines, on 65,536 token positions from the canonical Pile stream
 
 - **The cosine spectrum separates from a row-shuffled null** for its
   first ~500 modes; the rest crosses below the null curve. **Pearson
-  (centered) is the honest headline statistic** — top eigval 151,
+  (centered) is the honest headline statistic.** Top eigval 151,
   effective rank 1,047. The raw cosine λ₁ = 206 is partly base-rate
   alignment (shuffled-null λ₁ = 150 too).
 - **Most components are not lexical.** Median per-component R²
@@ -32,7 +32,7 @@ Headlines, on 65,536 token positions from the canonical Pile stream
   Q→K peaks at **τ = −1** in L0/L1/L3 (excess +0.27 to +0.61 over null)
   and at τ = 0 in L2. The signal collapses to the null band by τ = ±2.
   An earlier draft of this repo claimed "peak deepens to τ = −2/−3
-  with depth" — that was a max-fishing artifact and is corrected in
+  with depth"; that was a max-fishing artifact and is corrected in
   `docs/results.md`.
 - **Layer/module geometries vary by ~80×.** L1 attn.k has 46 alive
   components in 5.5 effective dimensions; L3 mlp.down has 1,837 alive
@@ -54,7 +54,7 @@ cd external/param-decomp && uv sync && cd ../..
 #    (public W&B project: signed-GCS URLs work without an API key)
 #    See "Reproducibility" section in docs/results.md for exact URLs.
 
-# 3. Mock smoke test — no real data, just validates the pipeline
+# 3. Mock smoke test (no real data, just validates the pipeline)
 uv run python -m vpd_gate_geometry.run_analysis \
     --backend mock \
     --output-dir outputs/gate_geometry/mock_smoke
