@@ -151,11 +151,21 @@ _SUPTITLE_KW: dict[str, object] = {
 
 
 def _set_title(ax, text: str, fontsize: float = 13) -> None:
-    ax.set_title(text, fontsize=fontsize, **_TITLE_KW)
+    """No-op by design.
+
+    Plot titles inside figures are a matplotlib-notebook habit, not
+    a paper habit. Captions in the surrounding prose carry the
+    description; the figure should be visually quiet. Keep this
+    helper as a no-op so every plot function still calls it (cheap
+    to revisit if we ever want titles back).
+    """
+    # Intentionally do nothing.
+    _ = (ax, text, fontsize)
 
 
 def _suptitle(fig, text: str, fontsize: float = 13.5) -> None:
-    fig.suptitle(text, fontsize=fontsize, **_SUPTITLE_KW)
+    """Same rationale as `_set_title`. No-op."""
+    _ = (fig, text, fontsize)
 
 
 def _to_np(t: torch.Tensor) -> np.ndarray:
