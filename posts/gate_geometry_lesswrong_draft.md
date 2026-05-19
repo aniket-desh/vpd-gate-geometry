@@ -25,13 +25,12 @@ TL;DR:
   effective rank within the same decomposition: L1 `attn.k_proj`
   lives in $\sim 5.5$ effective dimensions, L3 `mlp.down_proj` in
   $\sim 434$.
-- 99.5% of the 65,536 token positions use a *unique* active-set
-  pattern over the 9,014 alive components. The gate field is not a
-  small bank of recurrent modes; it spends its capacity per token.
-- 99.6% of alive components are single-token triggers (persistence
-  $P(\text{on at } t{+}1 \mid \text{on at } t) \approx$ baseline).
-  Only 32 of 9,014 alive components behave as persistent context
-  state.
+- The gate tensor is mostly token-local. At threshold $g > 0.5$, the
+  median alive component has implied on-run length 1.06 tokens, and
+  only 32 of 9,014 alive components have persistence > 0.8. Adjacent
+  tokens share more support than random pairs (Jaccard 0.156 vs
+  0.067), but almost every token still has a distinct active-set
+  signature.
 
 ![Cosine kernel on the top-4,096 alive VPD components (left) compared to a column-wise row-shuffled null (right) that preserves each component's marginal distribution but destroys all cross-component co-activation. Both panels share the same row ordering, colormap, and colour scale; the dense upper-left block in the real panel is visibly absent on the right.](../outputs/gate_geometry/pile4L_v2/plots/10_kernel_real_vs_null.png)
 
@@ -109,7 +108,9 @@ I compare kernel variants on the top-4,096 alive components.
 
 ![Eigenspectra of the top-4,096 alive VPD gates under three kernel variants and the column-wise row-shuffled null. Raw cosine and centered Pearson are nearly indistinguishable past the first eigenvalue; the null is flat above λ1 ≈ 150 and crosses both real curves only in the deep tail.](../outputs/gate_geometry/pile4L_v2/plots/09_kernel_variants.png)
 
-![Real cosine kernel (left) and column-wise row-shuffled cosine kernel (right) on the top-4,096 alive components, plotted under the same row ordering, colormap, and colour scale. The dense upper-left block in the real panel disappears under the shuffled control.](../outputs/gate_geometry/pile4L_v2/plots/10_kernel_real_vs_null.png)
+(The lead figure at the top of this post shows the same kernel as a
+heatmap pair: real on the left vs the column-wise row-shuffled null
+on the right.)
 
 The raw cosine top eigenvalue is 206. The same kernel on a
 column-wise row-shuffled $G$ (each component column independently
@@ -251,97 +252,66 @@ The L1-to-L3 axis spans roughly two orders of magnitude in effective
 rank within the same decomposition. Module geometries genuinely do
 differ this much; that conclusion does not need null discipline.
 
-## Experiment 5: how is the gate tensor actually shaped?
+## Experiment 5: the gate tensor is token-local
 
-The first four sections all worked on flat $[N, C]$ kernel views. Two
-geometric properties don't show up there but matter for what kind of
-decomposition VPD is producing: **temporal persistence** (do
-components stay on across consecutive tokens?) and **row-pattern
-vocabulary** (how many distinct active-sets does the model use?).
+The kernel views hide two simple facts: most components do not
+persist across many tokens, and exact active sets are almost never
+reused.
 
-### Temporal persistence: components are mostly single-token
-
-For each alive component $c$, with binary trace
-$b_t(c) = \mathbb{1}[g_{b,t,c} > 0.5]$, I compute
+**Temporal persistence.** For each alive component $c$, with binary
+trace $b_t(c) = \mathbb{1}[g_{b,t,c} > 0.5]$, I compute
 $P(b_{t+1} = 1 \mid b_t = 1)$.
 
 | metric (over 9,014 alive components) | value |
 | --- | ---: |
 | median persistence  $P(\text{on at } t{+}1 \mid \text{on at } t)$ | 0.054 |
+| mean persistence | 0.106 |
+| mean baseline density  $P(\text{on})$ | 0.017 |
 | median geometric on-run length | 1.06 tokens |
-| 95th-percentile persistence | 0.487 |
-| 95th-percentile on-run length | 1.95 tokens |
+| 95th-percentile persistence | 0.409 |
+| 95th-percentile on-run length | 1.69 tokens |
+| components with persistence > 0.3 | 842 of 9,014  (9.3%) |
+| components with persistence > 0.5 | 244 of 9,014  (2.7%) |
 | components with persistence > 0.8 | **32 of 9,014  (0.4%)** |
-| components with persistence > 0.5 |   159 of 9,014  (1.8%) |
 
-![Per-component persistence vs baseline density, log-x. Most alive components hug the independence diagonal: their P(on at t+1 | on at t) equals their marginal P(on). A small cluster sits well above the diagonal (high persistence), corresponding to the ~32 components that stay on across runs of tokens.](../outputs/gate_geometry/temporal/02_persistence_vs_density.png)
+![Per-component persistence vs baseline density, log-x, one point per alive component. The dashed line is the independence prediction P(on at t+1 | on at t) = P(on). Most alive components sit short of high persistence; a small upper-right cluster sits well above the diagonal.](../outputs/gate_geometry/temporal/02_persistence_vs_density.png)
 
-The dominant pattern is that components are **single-token triggers**,
-not context features. A typical alive component fires on one token and
-its probability of firing on the next token drops back to its
-marginal rate. Only ~32 components behave as context-like state. The
-parameter atoms VPD has learned are overwhelmingly point events along
-the sequence, not running flags.
+Most alive components are short-lived. Mean persistence (0.106) is
+about $6\times$ the mean baseline density (0.017), so it is not
+literally "equal to baseline"; the gate field does carry a small
+above-chance temporal correlation. But only **0.4% of alive
+components have persistence > 0.8**, which is the threshold I would
+need to call a component a real context-state variable.
 
-### Row-pattern vocabulary: nearly every token has a unique signature
+**Row-pattern vocabulary.** Threshold $g > 0.5$ on the 9,014 alive
+columns. Each token position becomes a binary active set $S_n$ of
+average size 149.1.
 
-Threshold $g > 0.5$ on the 9,014 alive columns. Each token position
-becomes a binary support $S_n \subseteq [9{,}014]$ of average size
-149.1. How many distinct $S_n$ are there?
-
-| pattern statistic | value |
-| --- | ---: |
-| unique active-set patterns | **65,211 of 65,536  (99.5%)** |
-| patterns appearing exactly once | 65,184  (99.5%) |
-| most frequent pattern | shared by **11 rows** |
-| patterns to cover 50% of rows | 32,690 |
-
-Jaccard similarity between active sets:
-
-| pair type | mean | median | p95 |
+| pair type | mean Jaccard | median | p95 |
 | --- | ---: | ---: | ---: |
-| random rows | 0.067 | 0.064 | 0.123 |
-| within-sequence  $(t, t{+}1)$ | **0.156** | 0.137 | 0.336 |
+| random row pairs | 0.067 | 0.057 | 0.140 |
+| within-sequence  $(t, t{+}1)$ | **0.156** | 0.134 | 0.322 |
 
-![Jaccard similarity of active sets: random row pairs (grey) vs within-sequence adjacent pairs (violet). The two distributions barely overlap. Adjacent tokens share 2.3× more components than random tokens do, but they still share only ~15% of their active sets on average.](../outputs/gate_geometry/row_patterns/02_jaccard_adjacent_vs_random.png)
+![Jaccard similarity of active sets: random row pairs (grey) vs within-sequence adjacent pairs (violet). The two distributions barely overlap; dashed lines mark the two means.](../outputs/gate_geometry/row_patterns/02_jaccard_adjacent_vs_random.png)
 
-The model is not reusing a small bank of "modes" of computation: it
-assembles a near-unique combination of ~150 atoms for almost every
-token. Adjacent tokens share 2.3× more support than random tokens
-(0.156 vs 0.067), so the gate field is locally smooth, but only
-modestly. Most of the local similarity comes from a small persistent
-backbone overlaid on a per-token-fresh trigger population.
+Adjacent tokens share $2.3\times$ more support than random pairs but
+still only $\sim 15.6\%$ of their active sets on average. The gate
+field is locally smooth, but only modestly so. As a side observation:
+65,211 of 65,536 token positions (99.5%) have a unique active set,
+with the most common pattern covering only 11 rows. Exact uniqueness
+is partly expected given the size of the combinatorial space
+($9{,}014$ alive components, average support 149), so I treat the
+Jaccard result as the headline and uniqueness as supporting evidence.
 
-### What this says about the parameter decomposition
-
-Putting the four kernel views together with these two structural
-views:
-
-1. **VPD is producing a long-tail dictionary with low atom reuse at
-   the row level.** 99.5% of token positions are using a unique
-   combination of components. The decomposition is not collapsing
-   computation onto a few recurrent modes; it spends its capacity on
-   discriminating individual token contexts.
-2. **The dictionary is dominated by point-event triggers, not
-   contextual state.** 99.6% of alive components live within one
-   token of the independence diagonal. Only ~32 atoms behave as
-   running state across tokens. Any "circuit" hypothesis built from
-   VPD components has to either explain mechanisms at the token-level
-   granularity, or work with the small persistent-component
-   subspace separately.
-3. **Where the structure lives** is therefore in the
-   *cross-component* and *cross-position-by-one* geometry, not in
-   long temporal runs. That matches what the spectrum and the Q/K
-   lag profile show: low-effective-rank co-importance within a token,
-   sharp same-token-and-immediate-neighbour coupling across modules,
-   nothing further out.
-4. **Implication for VPD clustering methods.** A clustering that
-   only looks at same-token coactivation (the current default) will
-   correctly see the column-side mechanism geometry, but it will
-   miss the small persistent-component subspace entirely (because
-   those components are rare in any given token). Treating
-   high-persistence atoms as a separate population during clustering
-   seems worth trying.
+Together with the kernel views, this gives a coherent picture: VPD
+gates carry real co-importance structure in the column dimension
+(Experiments 1-4), but along the row dimension the decomposition
+builds nearly token-specific active sets from short-lived atoms,
+with a small persistent subspace ($\sim 32$ components) as the
+exception. Any clustering method that only looks at same-token
+co-activation will see the column geometry but will not surface the
+persistent subspace, since those components are rare in any single
+token.
 
 ## Summary: what survived the controls?
 
@@ -352,8 +322,8 @@ views:
 | Q/K coupling reaches back two or three tokens | No. Signal collapses into the null band past $\tau = \pm 2$. |
 | Q/K coupling is one-token-back in most layers | Yes. Excess +0.27 to +0.61 over null p95 in L0/L1/L3; L2 peaks at $\tau = 0$. |
 | Different modules have wildly different gate geometries | Yes. $\sim 80\times$ range in effective rank across modules. |
-| VPD reuses a small bank of recurrent gate patterns | **No.** 99.5% of token positions are unique active sets; the top-shared pattern covers only 11 rows. |
-| Most gate atoms are persistent context features | **No.** Only 32 of 9,014 alive components (0.4%) have persistence > 0.8; the rest fire on single tokens. |
+| Gate atoms are mostly persistent context variables | No. Mean persistence 0.11 vs mean baseline 0.02 (a real $\sim 6\times$ lift, but small in absolute terms); only 32 of 9,014 (0.4%) alive components reach persistence > 0.8. |
+| Adjacent tokens use roughly the same active set | Partly. Adjacent-pair Jaccard 0.156 vs random 0.067 ($2.3\times$ lift), but adjacent tokens still differ on ~85% of their active components. |
 
 ## What this suggests for VPD-style clustering
 
@@ -400,26 +370,22 @@ components would distinguish these.
 
 ## Future work
 
-In rough order of how interesting they look from the current data:
-
 1. **Bilinear gate features.** Compute pairwise products
-   $g_{b,t,c}\,g_{b,t,c'}$ and look for low-rank quadratic
-   structure, in the spirit of bilinear autoencoders
+   $g_{b,t,c}\,g_{b,t,c'}$ and look for low-rank quadratic structure,
+   in the spirit of bilinear autoencoders
    ([Dooms & Gauderis, 2025](https://arxiv.org/abs/2510.16820);
    [project page](https://tdooms.github.io/research/bae/)). The
    L0 Q→K coupling at $\tau = -1$ is exactly the kind of pairwise
    structure such a method could surface automatically.
-2. **Cluster-level case study.** Pick one of the dense blocks from
-   the cosine-kernel heatmap and run autointerp on its members.
+2. **Persistent-component case study.** Autointerp the 32 alive
+   components with persistence > 0.8 and the densest block from the
+   cosine-kernel heatmap. These are two qualitatively different
+   populations that the kernel and temporal views agree are worth
+   inspecting.
 3. **CLT/PLT comparison.** The Bussmann fork provides matched
-   decompositions; the same spectrum and lag profile would tell us
-   whether what we see is VPD-specific or generic to rank-one
-   parameter decompositions.
-4. **Robustness checks over sequence length and lag window.** I
-   would want to verify that the small upticks at $\tau \in \{+5, +6\}$
-   visible in some pairs are window artifacts rather than real
-   long-range structure. This is a check on the current conclusion,
-   not a hint that I expect hidden signal.
+   decompositions; the same spectrum, lag profile, and persistence
+   distribution would tell us whether what we see is VPD-specific or
+   generic to rank-one parameter decompositions.
 
 ## Reproducibility
 

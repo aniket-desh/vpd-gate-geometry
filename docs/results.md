@@ -126,7 +126,7 @@ On the same top-4,096 alive subset:
 | top eigval after residualization | 143.1 |
 
 The R² histogram is bimodal-with-tail: a primary mode at R² ≤ 0.10
-(contextual), a secondary mode at 0.15–0.30 (partially token-bound),
+(contextual), a secondary mode at 0.15-0.30 (partially token-bound),
 and a long tail extending past 0.7 (~100s of strongly lexical
 components). The deflationary version of H2 ("VPD gates are largely
 token artifacts") is clearly false at this scale.
@@ -180,7 +180,7 @@ Two things are now clear that were not before:
 
 **Corrected verdict:** there *is* genuine cross-position structure in
 L2 Q/K, where same-position and immediate-neighbor coupling beat the null
-by 40–60% (excess ~0.14, null floor ~0.10). There is *no* evidence
+by 40-60% (excess ~0.14, null floor ~0.10). There is *no* evidence
 for the "Q at later position reaches back several tokens to K"
 narrative I asserted in v1. Anything past τ = ±2 is at the noise floor.
 
@@ -300,7 +300,7 @@ of magnitude in effective rank.
   upstream harvest pipeline's call. No reimplementation.
 - All analyses run on H200 GPU. End-to-end main run with 6 null
   shuffles is ~6 minutes; cache load is ~30 s; the 10-pair sweep takes
-  ~10–15 min with nulls.
+  ~10-15 min with nulls.
 - The gate matrix at this scale is 9.6 GB on disk (65,536 × 38,912
   fp32). Cached at
   `outputs/gate_geometry/cache/pile4L_16x8x512.pt`
@@ -341,24 +341,31 @@ vs 9.6 GB dense fp32 (75× compression), max precision loss 2.4e-4.
 | metric (over 9,014 alive components) | value |
 | --- | ---: |
 | median $P(\text{on at } t{+}1 \mid \text{on at } t)$ | 0.054 |
+| mean persistence | 0.106 |
+| mean baseline density $P(\text{on})$ | 0.017 |
 | median geometric on-run length | 1.06 tokens |
+| p95 persistence | 0.409 |
+| p95 on-run length | 1.69 tokens |
+| components with persistence > 0.3 | 842 of 9,014  (9.3%) |
+| components with persistence > 0.5 | 244 of 9,014  (2.7%) |
 | components with persistence > 0.8 | 32 of 9,014  (0.4%) |
-| components with persistence > 0.5 | 159 of 9,014  (1.8%) |
 
-99.6% of alive components fire as single-token triggers (persistence
-within rounding error of baseline). The decomposition has learned
-~32 components that act as persistent context state and ~8,800 that
-behave as point events.
+Most alive components are short-lived. Mean persistence is about
+$6\times$ the mean baseline density, so there is real above-chance
+temporal correlation, but only 0.4% of alive components reach
+persistence > 0.8 (the threshold I would use for "context-state
+variable").
 
 **Row-pattern vocabulary** (threshold $g > 0.5$, alive cols only):
 
 | pattern statistic | value |
 | --- | ---: |
 | unique active-set patterns | 65,211 of 65,536  (99.5%) |
-| patterns appearing once | 65,184  (99.5%) |
+| patterns appearing once | 65,013  (99.2%) |
 | most frequent pattern | 11 rows |
-| Jaccard, random row pairs | mean 0.067 |
-| Jaccard, within-sequence $(t, t{+}1)$ | mean **0.156**  (2.3× lift) |
+| patterns to cover 50% of rows | 32,443 |
+| Jaccard, random row pairs (mean / median / p95) | 0.067 / 0.057 / 0.140 |
+| Jaccard, within-sequence $(t, t{+}1)$ (mean / median / p95) | **0.156** / 0.134 / 0.322 |
 
 The model assembles a near-unique combination of ~150 atoms for
 almost every token. Adjacent tokens are 2.3× more similar than
@@ -372,5 +379,5 @@ random pairs but still share only ~15% of their support.
 | H2 | Token identity explains a nontrivial but incomplete fraction | **yes, modestly**. Median R² 0.06, bimodal-with-tail. Token-residualization spectrum is essentially the centered Pearson spectrum + minor adjustment. |
 | H3 | Lagged co-importance reveals real cross-position structure | **yes for τ ∈ {−2, −1, 0} with peak at τ = −1 in 3 of 4 same-layer Q/K pairs (L2 peaks at τ = 0); no for longer lags.** Earlier "peak deepens to τ = −3" was a max-fishing artifact; the real signal is one position back. |
 | H4 | Different modules have different gate geometries | **yes**. L1 attn.k (eff_rank 5.5) vs L3 mlp.down (eff_rank 434) is ~80×, with no statistical games involved. |
-| H5 (temporal) | The gate field has persistent context components | **mostly no**. 99.6% of alive components fire as single-token triggers; only 32 of 9,014 (0.4%) have persistence > 0.8. |
-| H6 (row patterns) | VPD reuses a small vocabulary of gate "modes" | **no**. 99.5% of token positions use a unique active-set pattern. Top shared pattern covers 11 rows. |
+| H5 (temporal) | Most gate atoms are persistent context variables | **mostly no**. Mean persistence 0.11 vs mean baseline 0.02 (a real $\sim 6\times$ lift, but small in absolute terms); only 32 of 9,014 (0.4%) alive components reach persistence > 0.8. |
+| H6 (row patterns) | Adjacent tokens use roughly the same active set | **partly**. Adjacent-pair Jaccard 0.156 vs random 0.067 ($2.3\times$ lift), but adjacent tokens still differ on ~85% of their active components. |

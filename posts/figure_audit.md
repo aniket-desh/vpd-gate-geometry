@@ -207,11 +207,10 @@ diagnostic of why max is the wrong headline.
 
 **Intended caption.** *Per-component persistence
 $P(\text{on at } t{+}1 \mid \text{on at } t)$ vs marginal density
-$P(\text{on})$ on a log-x axis, one point per alive component.
-Most components hug the independence diagonal (persistence = density),
-which means they fire as single-token triggers. A small cluster of
-~32 components sits well above the diagonal, behaving as persistent
-context state.*
+$P(\text{on})$ on a log-x axis, one point per alive component. Dashed
+line marks the independence prediction (persistence = density). Most
+alive components sit short of high persistence; the small upper-right
+cluster (~32 components) sits well above the diagonal.*
 
 | check | status |
 | --- | --- |
