@@ -1,8 +1,18 @@
 {
   "backend": "repo",
   "provenance": {
-    "n_batches": null,
-    "backend": "unknown (cache had no provenance dict)"
+    "backend": "repo",
+    "run_path": "runs/pile-4L/model_400000.pth",
+    "target_model_path": "runs/pretrain-4L/files/model_step_99999.pt",
+    "dataset_name": "danbraunai/pile-uncopyrighted-tok-shuffled",
+    "dataset_split": "train",
+    "dataset_column": "input_ids",
+    "n_batches": 16,
+    "batch_size": 8,
+    "seq_len": 512,
+    "sampling": "continuous",
+    "seed": 0,
+    "source_note": "patched post-hoc; cache predates run_analysis.py provenance dict."
   },
   "modules": [
     "h.0.attn.k_proj",
@@ -235,15 +245,15 @@
   "spectrum_residual_cosine": {
     "top10": [
       143.1338348388672,
-      85.73905181884766,
+      85.73905944824219,
       72.28438568115234,
-      54.80567169189453,
-      47.15996170043945,
-      44.86415100097656,
+      54.8056640625,
+      47.15995407104492,
+      44.8641471862793,
       41.479740142822266,
-      34.29021453857422,
+      34.29021072387695,
       32.86204528808594,
-      30.597795486450195
+      30.59779167175293
     ],
     "effective_rank": 1292.6427001953125
   },
