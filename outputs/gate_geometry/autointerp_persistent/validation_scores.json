@@ -1,0 +1,699 @@
+[
+  {
+    "component_idx": 31689,
+    "category": "persistent",
+    "module": "h.3.attn.v_proj",
+    "local_idx": 457,
+    "mean_gate": 0.03768543526530266,
+    "persistence": 0.952513966480447,
+    "label": "mathematical operations",
+    "hypothesis": "The gate fires strongly in snippets involving mathematical expressions and operations.",
+    "scores": {
+      "n": 60,
+      "tp": 28,
+      "fp": 1,
+      "tn": 29,
+      "fn": 2,
+      "accuracy": 0.95,
+      "balanced_accuracy": 0.95,
+      "precision": 0.9655172413793104,
+      "recall": 0.9333333333333333,
+      "specificity": 0.9666666666666667
+    },
+    "random_label_scores": {
+      "n": 60,
+      "tp": 14,
+      "fp": 15,
+      "tn": 15,
+      "fn": 16,
+      "accuracy": 0.48333333333333334,
+      "balanced_accuracy": 0.48333333333333334,
+      "precision": 0.4827586206896552,
+      "recall": 0.4666666666666667,
+      "specificity": 0.5
+    },
+    "token_identity_baseline": {
+      "top_token_id": 11,
+      "top_token_str": "*",
+      "top_token_count": 7,
+      "top_token_fraction_of_positives": 0.1,
+      "n_positives_used": 70
+    }
+  },
+  {
+    "component_idx": 1048,
+    "category": "persistent",
+    "module": "h.0.attn.o_proj",
+    "local_idx": 536,
+    "mean_gate": 0.006990497000515461,
+    "persistence": 0.934322033898305,
+    "label": "political discourse",
+    "hypothesis": "The gate fires strongly in snippets related to discussions about language rights and legislative actions in Northern Ireland.",
+    "scores": {
+      "n": 60,
+      "tp": 20,
+      "fp": 0,
+      "tn": 30,
+      "fn": 10,
+      "accuracy": 0.8333333333333334,
+      "balanced_accuracy": 0.8333333333333333,
+      "precision": 1.0,
+      "recall": 0.6666666666666666,
+      "specificity": 1.0
+    },
+    "random_label_scores": {
+      "n": 60,
+      "tp": 10,
+      "fp": 10,
+      "tn": 20,
+      "fn": 20,
+      "accuracy": 0.5,
+      "balanced_accuracy": 0.5,
+      "precision": 0.5,
+      "recall": 0.3333333333333333,
+      "specificity": 0.6666666666666666
+    },
+    "token_identity_baseline": {
+      "top_token_id": 24970,
+      "top_token_str": "\u0173",
+      "top_token_count": 4,
+      "top_token_fraction_of_positives": 0.05714285714285714,
+      "n_positives_used": 70
+    }
+  },
+  {
+    "component_idx": 553,
+    "category": "persistent",
+    "module": "h.0.attn.o_proj",
+    "local_idx": 41,
+    "mean_gate": 0.03979913145303726,
+    "persistence": 0.8764818355640536,
+    "label": "medical terminology focus",
+    "hypothesis": "The gate fires strongly in snippets that contain medical terminology related to respiratory and cardiovascular assessments.",
+    "scores": {
+      "n": 58,
+      "tp": 3,
+      "fp": 2,
+      "tn": 27,
+      "fn": 26,
+      "accuracy": 0.5172413793103449,
+      "balanced_accuracy": 0.5172413793103449,
+      "precision": 0.6,
+      "recall": 0.10344827586206896,
+      "specificity": 0.9310344827586207
+    },
+    "random_label_scores": {
+      "n": 58,
+      "tp": 2,
+      "fp": 3,
+      "tn": 25,
+      "fn": 28,
+      "accuracy": 0.46551724137931033,
+      "balanced_accuracy": 0.4797619047619048,
+      "precision": 0.4,
+      "recall": 0.06666666666666667,
+      "specificity": 0.8928571428571429
+    },
+    "token_identity_baseline": {
+      "top_token_id": 9747,
+      "top_token_str": "ende",
+      "top_token_count": 2,
+      "top_token_fraction_of_positives": 0.02857142857142857,
+      "n_positives_used": 70
+    }
+  },
+  {
+    "component_idx": 1144,
+    "category": "persistent",
+    "module": "h.0.attn.o_proj",
+    "local_idx": 632,
+    "mean_gate": 0.006184340920299292,
+    "persistence": 0.8554502369668247,
+    "label": "report expansion context",
+    "hypothesis": "The gate fires strongly in contexts where there is a discussion about extending the mandate or contributions related to reports or expert evaluations.",
+    "scores": {
+      "n": 59,
+      "tp": 7,
+      "fp": 0,
+      "tn": 29,
+      "fn": 23,
+      "accuracy": 0.6101694915254238,
+      "balanced_accuracy": 0.6166666666666667,
+      "precision": 1.0,
+      "recall": 0.23333333333333334,
+      "specificity": 1.0
+    },
+    "random_label_scores": {
+      "n": 59,
+      "tp": 3,
+      "fp": 4,
+      "tn": 25,
+      "fn": 27,
+      "accuracy": 0.4745762711864407,
+      "balanced_accuracy": 0.48103448275862065,
+      "precision": 0.42857142857142855,
+      "recall": 0.1,
+      "specificity": 0.8620689655172413
+    },
+    "token_identity_baseline": {
+      "top_token_id": 257,
+      "top_token_str": "en",
+      "top_token_count": 4,
+      "top_token_fraction_of_positives": 0.05714285714285714,
+      "n_positives_used": 70
+    }
+  },
+  {
+    "component_idx": 841,
+    "category": "persistent",
+    "module": "h.0.attn.o_proj",
+    "local_idx": 329,
+    "mean_gate": 0.13998228311538696,
+    "persistence": 0.8419974115616912,
+    "label": "equations and scientific context",
+    "hypothesis": "The gate fires strongly in snippets that involve scientific equations, references to tables, and discussions of results in a research context.",
+    "scores": {
+      "n": 60,
+      "tp": 29,
+      "fp": 2,
+      "tn": 28,
+      "fn": 1,
+      "accuracy": 0.95,
+      "balanced_accuracy": 0.95,
+      "precision": 0.9354838709677419,
+      "recall": 0.9666666666666667,
+      "specificity": 0.9333333333333333
+    },
+    "random_label_scores": {
+      "n": 60,
+      "tp": 16,
+      "fp": 15,
+      "tn": 15,
+      "fn": 14,
+      "accuracy": 0.5166666666666667,
+      "balanced_accuracy": 0.5166666666666666,
+      "precision": 0.5161290322580645,
+      "recall": 0.5333333333333333,
+      "specificity": 0.5
+    },
+    "token_identity_baseline": {
+      "top_token_id": 5546,
+      "top_token_str": "car",
+      "top_token_count": 3,
+      "top_token_fraction_of_positives": 0.04285714285714286,
+      "n_positives_used": 70
+    }
+  },
+  {
+    "component_idx": 22656,
+    "category": "persistent",
+    "module": "h.2.mlp.c_fc",
+    "local_idx": 128,
+    "mean_gate": 0.03429972752928734,
+    "persistence": 0.824038045827929,
+    "label": "contextual markers in sentences",
+    "hypothesis": "The gate fires strongly when the focus token appears in the context of numerical or structural information related to environmental or economic topics.",
+    "scores": {
+      "n": 60,
+      "tp": 12,
+      "fp": 1,
+      "tn": 29,
+      "fn": 18,
+      "accuracy": 0.6833333333333333,
+      "balanced_accuracy": 0.6833333333333333,
+      "precision": 0.9230769230769231,
+      "recall": 0.4,
+      "specificity": 0.9666666666666667
+    },
+    "random_label_scores": {
+      "n": 60,
+      "tp": 7,
+      "fp": 6,
+      "tn": 24,
+      "fn": 23,
+      "accuracy": 0.5166666666666667,
+      "balanced_accuracy": 0.5166666666666667,
+      "precision": 0.5384615384615384,
+      "recall": 0.23333333333333334,
+      "specificity": 0.8
+    },
+    "token_identity_baseline": {
+      "top_token_id": 9124,
+      "top_token_str": "\u017e",
+      "top_token_count": 3,
+      "top_token_fraction_of_positives": 0.04285714285714286,
+      "n_positives_used": 70
+    }
+  },
+  {
+    "component_idx": 32141,
+    "category": "persistent",
+    "module": "h.3.attn.v_proj",
+    "local_idx": 909,
+    "mean_gate": 0.024540936574339867,
+    "persistence": 0.8174454828660436,
+    "label": "breathing difficulties context",
+    "hypothesis": "The gate fires strongly in contexts discussing breathing difficulties and related medical conditions.",
+    "scores": {
+      "n": 60,
+      "tp": 5,
+      "fp": 3,
+      "tn": 27,
+      "fn": 25,
+      "accuracy": 0.5333333333333333,
+      "balanced_accuracy": 0.5333333333333333,
+      "precision": 0.625,
+      "recall": 0.16666666666666666,
+      "specificity": 0.9
+    },
+    "random_label_scores": {
+      "n": 60,
+      "tp": 5,
+      "fp": 3,
+      "tn": 27,
+      "fn": 25,
+      "accuracy": 0.5333333333333333,
+      "balanced_accuracy": 0.5333333333333333,
+      "precision": 0.625,
+      "recall": 0.16666666666666666,
+      "specificity": 0.9
+    },
+    "token_identity_baseline": {
+      "top_token_id": 372,
+      "top_token_str": " de",
+      "top_token_count": 5,
+      "top_token_fraction_of_positives": 0.07142857142857142,
+      "n_positives_used": 70
+    }
+  },
+  {
+    "component_idx": 34638,
+    "category": "persistent",
+    "module": "h.3.mlp.c_fc",
+    "local_idx": 2382,
+    "mean_gate": 0.09396693855524063,
+    "persistence": 0.8168340506934482,
+    "label": "mathematical expressions",
+    "hypothesis": "The gate fires strongly in contexts involving mathematical expressions and definitions, particularly when introducing or referencing functions and operations.",
+    "scores": {
+      "n": 60,
+      "tp": 24,
+      "fp": 8,
+      "tn": 22,
+      "fn": 6,
+      "accuracy": 0.7666666666666667,
+      "balanced_accuracy": 0.7666666666666666,
+      "precision": 0.75,
+      "recall": 0.8,
+      "specificity": 0.7333333333333333
+    },
+    "random_label_scores": {
+      "n": 60,
+      "tp": 17,
+      "fp": 15,
+      "tn": 15,
+      "fn": 13,
+      "accuracy": 0.5333333333333333,
+      "balanced_accuracy": 0.5333333333333333,
+      "precision": 0.53125,
+      "recall": 0.5666666666666667,
+      "specificity": 0.5
+    },
+    "token_identity_baseline": {
+      "top_token_id": 2981,
+      "top_token_str": "xi",
+      "top_token_count": 4,
+      "top_token_fraction_of_positives": 0.05714285714285714,
+      "n_positives_used": 70
+    }
+  },
+  {
+    "component_idx": 10532,
+    "category": "persistent",
+    "module": "h.1.attn.o_proj",
+    "local_idx": 292,
+    "mean_gate": 0.035737890750169754,
+    "persistence": 0.8165654813529922,
+    "label": "contextual growth indicators",
+    "hypothesis": "The gate fires strongly when discussing positive growth or transitions in various contexts.",
+    "scores": {
+      "n": 42,
+      "tp": 0,
+      "fp": 5,
+      "tn": 19,
+      "fn": 18,
+      "accuracy": 0.4523809523809524,
+      "balanced_accuracy": 0.3958333333333333,
+      "precision": 0.0,
+      "recall": 0.0,
+      "specificity": 0.7916666666666666
+    },
+    "random_label_scores": {
+      "n": 42,
+      "tp": 1,
+      "fp": 4,
+      "tn": 16,
+      "fn": 21,
+      "accuracy": 0.40476190476190477,
+      "balanced_accuracy": 0.42272727272727273,
+      "precision": 0.2,
+      "recall": 0.045454545454545456,
+      "specificity": 0.8
+    },
+    "token_identity_baseline": {
+      "top_token_id": 187,
+      "top_token_str": "\n",
+      "top_token_count": 9,
+      "top_token_fraction_of_positives": 0.12857142857142856,
+      "n_positives_used": 70
+    }
+  },
+  {
+    "component_idx": 34107,
+    "category": "persistent",
+    "module": "h.3.mlp.c_fc",
+    "local_idx": 1851,
+    "mean_gate": 0.056618183851242065,
+    "persistence": 0.8163596966413867,
+    "label": "medical terminology context",
+    "hypothesis": "The gate fires strongly in snippets that contain medical terminology and descriptions related to health conditions.",
+    "scores": {
+      "n": 58,
+      "tp": 5,
+      "fp": 2,
+      "tn": 26,
+      "fn": 25,
+      "accuracy": 0.5344827586206896,
+      "balanced_accuracy": 0.5476190476190477,
+      "precision": 0.7142857142857143,
+      "recall": 0.16666666666666666,
+      "specificity": 0.9285714285714286
+    },
+    "random_label_scores": {
+      "n": 58,
+      "tp": 2,
+      "fp": 5,
+      "tn": 25,
+      "fn": 26,
+      "accuracy": 0.46551724137931033,
+      "balanced_accuracy": 0.4523809523809524,
+      "precision": 0.2857142857142857,
+      "recall": 0.07142857142857142,
+      "specificity": 0.8333333333333334
+    },
+    "token_identity_baseline": {
+      "top_token_id": 187,
+      "top_token_str": "\n",
+      "top_token_count": 4,
+      "top_token_fraction_of_positives": 0.05714285714285714,
+      "n_positives_used": 70
+    }
+  },
+  {
+    "component_idx": 1234,
+    "category": "persistent",
+    "module": "h.0.attn.o_proj",
+    "local_idx": 722,
+    "mean_gate": 0.03425734490156174,
+    "persistence": 0.8134920634920635,
+    "label": "mathematical expressions",
+    "hypothesis": "The gate fires strongly when the snippets involve mathematical operations or equations.",
+    "scores": {
+      "n": 60,
+      "tp": 30,
+      "fp": 1,
+      "tn": 29,
+      "fn": 0,
+      "accuracy": 0.9833333333333333,
+      "balanced_accuracy": 0.9833333333333334,
+      "precision": 0.967741935483871,
+      "recall": 1.0,
+      "specificity": 0.9666666666666667
+    },
+    "random_label_scores": {
+      "n": 60,
+      "tp": 11,
+      "fp": 20,
+      "tn": 10,
+      "fn": 19,
+      "accuracy": 0.35,
+      "balanced_accuracy": 0.35,
+      "precision": 0.3548387096774194,
+      "recall": 0.36666666666666664,
+      "specificity": 0.3333333333333333
+    },
+    "token_identity_baseline": {
+      "top_token_id": 11,
+      "top_token_str": "*",
+      "top_token_count": 9,
+      "top_token_fraction_of_positives": 0.12857142857142856,
+      "n_positives_used": 70
+    }
+  },
+  {
+    "component_idx": 20566,
+    "category": "persistent",
+    "module": "h.2.attn.o_proj",
+    "local_idx": 598,
+    "mean_gate": 0.2319122552871704,
+    "persistence": 0.8132613419371831,
+    "label": "contextual evaluation of performance",
+    "hypothesis": "The gate fires strongly when discussing the evaluation of performance metrics in a sports context, particularly related to penalties and player actions.",
+    "scores": {
+      "n": 60,
+      "tp": 3,
+      "fp": 0,
+      "tn": 30,
+      "fn": 27,
+      "accuracy": 0.55,
+      "balanced_accuracy": 0.55,
+      "precision": 1.0,
+      "recall": 0.1,
+      "specificity": 1.0
+    },
+    "random_label_scores": {
+      "n": 60,
+      "tp": 0,
+      "fp": 3,
+      "tn": 27,
+      "fn": 30,
+      "accuracy": 0.45,
+      "balanced_accuracy": 0.45,
+      "precision": 0.0,
+      "recall": 0.0,
+      "specificity": 0.9
+    },
+    "token_identity_baseline": {
+      "top_token_id": 187,
+      "top_token_str": "\n",
+      "top_token_count": 6,
+      "top_token_fraction_of_positives": 0.08571428571428572,
+      "n_positives_used": 70
+    }
+  },
+  {
+    "component_idx": 11027,
+    "category": "persistent",
+    "module": "h.1.attn.o_proj",
+    "local_idx": 787,
+    "mean_gate": 0.0016468303510919213,
+    "persistence": 0.8125,
+    "label": "question formation",
+    "hypothesis": "The gate fires strongly when the snippets contain questions that seek clarification or instructions on specific topics.",
+    "scores": {
+      "n": 60,
+      "tp": 28,
+      "fp": 11,
+      "tn": 19,
+      "fn": 2,
+      "accuracy": 0.7833333333333333,
+      "balanced_accuracy": 0.7833333333333333,
+      "precision": 0.717948717948718,
+      "recall": 0.9333333333333333,
+      "specificity": 0.6333333333333333
+    },
+    "random_label_scores": {
+      "n": 60,
+      "tp": 23,
+      "fp": 16,
+      "tn": 14,
+      "fn": 7,
+      "accuracy": 0.6166666666666667,
+      "balanced_accuracy": 0.6166666666666667,
+      "precision": 0.5897435897435898,
+      "recall": 0.7666666666666667,
+      "specificity": 0.4666666666666667
+    },
+    "token_identity_baseline": {
+      "top_token_id": 187,
+      "top_token_str": "\n",
+      "top_token_count": 28,
+      "top_token_fraction_of_positives": 0.4,
+      "n_positives_used": 70
+    }
+  },
+  {
+    "component_idx": 32708,
+    "category": "persistent",
+    "module": "h.3.mlp.c_fc",
+    "local_idx": 452,
+    "mean_gate": 0.2522973120212555,
+    "persistence": 0.8114605929139552,
+    "label": "contextual importance markers",
+    "hypothesis": "The gate fires strongly when the focus token contributes to the contextual flow or structure of the sentence.",
+    "scores": {
+      "n": 60,
+      "tp": 26,
+      "fp": 22,
+      "tn": 8,
+      "fn": 4,
+      "accuracy": 0.5666666666666667,
+      "balanced_accuracy": 0.5666666666666667,
+      "precision": 0.5416666666666666,
+      "recall": 0.8666666666666667,
+      "specificity": 0.26666666666666666
+    },
+    "random_label_scores": {
+      "n": 60,
+      "tp": 23,
+      "fp": 25,
+      "tn": 5,
+      "fn": 7,
+      "accuracy": 0.4666666666666667,
+      "balanced_accuracy": 0.4666666666666667,
+      "precision": 0.4791666666666667,
+      "recall": 0.7666666666666667,
+      "specificity": 0.16666666666666666
+    },
+    "token_identity_baseline": {
+      "top_token_id": 187,
+      "top_token_str": "\n",
+      "top_token_count": 5,
+      "top_token_fraction_of_positives": 0.07142857142857142,
+      "n_positives_used": 70
+    }
+  },
+  {
+    "component_idx": 36407,
+    "category": "persistent",
+    "module": "h.3.mlp.down_proj",
+    "local_idx": 1079,
+    "mean_gate": 0.0010545204859226942,
+    "persistence": 0.8088235294117647,
+    "label": "unclear",
+    "hypothesis": "The snippets do not exhibit a coherent pattern.",
+    "scores": {
+      "n": 58,
+      "tp": 0,
+      "fp": 0,
+      "tn": 30,
+      "fn": 28,
+      "accuracy": 0.5172413793103449,
+      "balanced_accuracy": 0.5,
+      "precision": 0.0,
+      "recall": 0.0,
+      "specificity": 1.0
+    },
+    "random_label_scores": {
+      "n": 58,
+      "tp": 0,
+      "fp": 0,
+      "tn": 30,
+      "fn": 28,
+      "accuracy": 0.5172413793103449,
+      "balanced_accuracy": 0.5,
+      "precision": 0.0,
+      "recall": 0.0,
+      "specificity": 1.0
+    },
+    "token_identity_baseline": {
+      "top_token_id": 6271,
+      "top_token_str": " --------",
+      "top_token_count": 16,
+      "top_token_fraction_of_positives": 0.23529411764705882,
+      "n_positives_used": 68
+    }
+  },
+  {
+    "component_idx": 9700,
+    "category": "persistent",
+    "module": "h.0.mlp.down_proj",
+    "local_idx": 3556,
+    "mean_gate": 0.03076622262597084,
+    "persistence": 0.8085728202630297,
+    "label": "health-related observations",
+    "hypothesis": "The gate fires strongly in contexts discussing health symptoms and measurements.",
+    "scores": {
+      "n": 56,
+      "tp": 3,
+      "fp": 5,
+      "tn": 23,
+      "fn": 25,
+      "accuracy": 0.4642857142857143,
+      "balanced_accuracy": 0.46428571428571425,
+      "precision": 0.375,
+      "recall": 0.10714285714285714,
+      "specificity": 0.8214285714285714
+    },
+    "random_label_scores": {
+      "n": 56,
+      "tp": 4,
+      "fp": 4,
+      "tn": 24,
+      "fn": 24,
+      "accuracy": 0.5,
+      "balanced_accuracy": 0.5,
+      "precision": 0.5,
+      "recall": 0.14285714285714285,
+      "specificity": 0.8571428571428571
+    },
+    "token_identity_baseline": {
+      "top_token_id": 546,
+      "top_token_str": " en",
+      "top_token_count": 3,
+      "top_token_fraction_of_positives": 0.04285714285714286,
+      "n_positives_used": 70
+    }
+  },
+  {
+    "component_idx": 30209,
+    "category": "persistent",
+    "module": "h.3.attn.o_proj",
+    "local_idx": 513,
+    "mean_gate": 0.023158270865678787,
+    "persistence": 0.8073154800783802,
+    "label": "medical terminology focus",
+    "hypothesis": "The gate fires strongly when discussing specific medical terms related to lung function and characteristics.",
+    "scores": {
+      "n": 60,
+      "tp": 5,
+      "fp": 3,
+      "tn": 27,
+      "fn": 25,
+      "accuracy": 0.5333333333333333,
+      "balanced_accuracy": 0.5333333333333333,
+      "precision": 0.625,
+      "recall": 0.16666666666666666,
+      "specificity": 0.9
+    },
+    "random_label_scores": {
+      "n": 60,
+      "tp": 2,
+      "fp": 6,
+      "tn": 24,
+      "fn": 28,
+      "accuracy": 0.43333333333333335,
+      "balanced_accuracy": 0.43333333333333335,
+      "precision": 0.25,
+      "recall": 0.06666666666666667,
+      "specificity": 0.8
+    },
+    "token_identity_baseline": {
+      "top_token_id": 13,
+      "top_token_str": ",",
+      "top_token_count": 2,
+      "top_token_fraction_of_positives": 0.02857142857142857,
+      "n_positives_used": 70
+    }
+  }
+]

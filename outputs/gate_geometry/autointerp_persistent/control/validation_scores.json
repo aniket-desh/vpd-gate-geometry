@@ -1,0 +1,494 @@
+[
+  {
+    "component_idx": 309,
+    "category": "control_non_persistent",
+    "module": "h.0.attn.k_proj",
+    "local_idx": 309,
+    "mean_gate": 0.35967639088630676,
+    "persistence": 0.298,
+    "label": "punctuation in legal context",
+    "hypothesis": "The gate fires strongly when punctuation marks are used in legal citations or statements.",
+    "scores": {
+      "n": 63,
+      "tp": 3,
+      "fp": 6,
+      "tn": 27,
+      "fn": 27,
+      "accuracy": 0.47619047619047616,
+      "balanced_accuracy": 0.4590909090909091,
+      "precision": 0.3333333333333333,
+      "recall": 0.1,
+      "specificity": 0.8181818181818182
+    },
+    "random_label_scores": {
+      "n": 63,
+      "tp": 5,
+      "fp": 4,
+      "tn": 26,
+      "fn": 28,
+      "accuracy": 0.49206349206349204,
+      "balanced_accuracy": 0.5090909090909091,
+      "precision": 0.5555555555555556,
+      "recall": 0.15151515151515152,
+      "specificity": 0.8666666666666667
+    },
+    "token_identity_baseline": {
+      "top_token_id": 15,
+      "top_token_str": ".",
+      "top_token_count": 9,
+      "top_token_fraction_of_positives": 0.12857142857142856,
+      "n_positives_used": 70
+    }
+  },
+  {
+    "component_idx": 21262,
+    "category": "control_non_persistent",
+    "module": "h.2.attn.q_proj",
+    "local_idx": 270,
+    "mean_gate": 0.22730571031570435,
+    "persistence": 0.17543507362784472,
+    "label": "dataframe analysis queries",
+    "hypothesis": "The gate fires strongly when the snippets involve queries related to analyzing or manipulating dataframes in Python, particularly with respect to marketing channels and frequencies.",
+    "scores": {
+      "n": 59,
+      "tp": 0,
+      "fp": 4,
+      "tn": 26,
+      "fn": 29,
+      "accuracy": 0.4406779661016949,
+      "balanced_accuracy": 0.43333333333333335,
+      "precision": 0.0,
+      "recall": 0.0,
+      "specificity": 0.8666666666666667
+    },
+    "random_label_scores": {
+      "n": 59,
+      "tp": 1,
+      "fp": 3,
+      "tn": 26,
+      "fn": 29,
+      "accuracy": 0.4576271186440678,
+      "balanced_accuracy": 0.4649425287356322,
+      "precision": 0.25,
+      "recall": 0.03333333333333333,
+      "specificity": 0.896551724137931
+    },
+    "token_identity_baseline": {
+      "top_token_id": 14736,
+      "top_token_str": " Search",
+      "top_token_count": 4,
+      "top_token_fraction_of_positives": 0.05714285714285714,
+      "n_positives_used": 70
+    }
+  },
+  {
+    "component_idx": 34560,
+    "category": "control_non_persistent",
+    "module": "h.3.mlp.c_fc",
+    "local_idx": 2304,
+    "mean_gate": 0.17226001620292664,
+    "persistence": 0.23402759469197645,
+    "label": "contextual linking phrases",
+    "hypothesis": "The gate fires strongly when the focus token is used to introduce or reference additional information, explanations, or conditions within the text.",
+    "scores": {
+      "n": 60,
+      "tp": 27,
+      "fp": 25,
+      "tn": 5,
+      "fn": 3,
+      "accuracy": 0.5333333333333333,
+      "balanced_accuracy": 0.5333333333333333,
+      "precision": 0.5192307692307693,
+      "recall": 0.9,
+      "specificity": 0.16666666666666666
+    },
+    "random_label_scores": {
+      "n": 60,
+      "tp": 27,
+      "fp": 25,
+      "tn": 5,
+      "fn": 3,
+      "accuracy": 0.5333333333333333,
+      "balanced_accuracy": 0.5333333333333333,
+      "precision": 0.5192307692307693,
+      "recall": 0.9,
+      "specificity": 0.16666666666666666
+    },
+    "token_identity_baseline": {
+      "top_token_id": 273,
+      "top_token_str": " of",
+      "top_token_count": 7,
+      "top_token_fraction_of_positives": 0.1,
+      "n_positives_used": 70
+    }
+  },
+  {
+    "component_idx": 30780,
+    "category": "control_non_persistent",
+    "module": "h.3.attn.q_proj",
+    "local_idx": 60,
+    "mean_gate": 0.1655326634645462,
+    "persistence": 0.28528780669838605,
+    "label": "unclear",
+    "hypothesis": "The snippets do not exhibit a coherent pattern or theme.",
+    "scores": {
+      "n": 60,
+      "tp": 0,
+      "fp": 0,
+      "tn": 30,
+      "fn": 30,
+      "accuracy": 0.5,
+      "balanced_accuracy": 0.5,
+      "precision": 0.0,
+      "recall": 0.0,
+      "specificity": 1.0
+    },
+    "random_label_scores": {
+      "n": 60,
+      "tp": 0,
+      "fp": 0,
+      "tn": 30,
+      "fn": 30,
+      "accuracy": 0.5,
+      "balanced_accuracy": 0.5,
+      "precision": 0.0,
+      "recall": 0.0,
+      "specificity": 1.0
+    },
+    "token_identity_baseline": {
+      "top_token_id": 15,
+      "top_token_str": ".",
+      "top_token_count": 5,
+      "top_token_fraction_of_positives": 0.07142857142857142,
+      "n_positives_used": 70
+    }
+  },
+  {
+    "component_idx": 19680,
+    "category": "control_non_persistent",
+    "module": "h.2.attn.k_proj",
+    "local_idx": 224,
+    "mean_gate": 0.1643633097410202,
+    "persistence": 0.22864345065820185,
+    "label": "mathematical symbols and variables",
+    "hypothesis": "The gate fires strongly in snippets that contain mathematical symbols and variables, indicating a focus on technical or scientific expressions.",
+    "scores": {
+      "n": 60,
+      "tp": 3,
+      "fp": 26,
+      "tn": 4,
+      "fn": 27,
+      "accuracy": 0.11666666666666667,
+      "balanced_accuracy": 0.11666666666666667,
+      "precision": 0.10344827586206896,
+      "recall": 0.1,
+      "specificity": 0.13333333333333333
+    },
+    "random_label_scores": {
+      "n": 60,
+      "tp": 12,
+      "fp": 17,
+      "tn": 13,
+      "fn": 18,
+      "accuracy": 0.4166666666666667,
+      "balanced_accuracy": 0.4166666666666667,
+      "precision": 0.41379310344827586,
+      "recall": 0.4,
+      "specificity": 0.43333333333333335
+    },
+    "token_identity_baseline": {
+      "top_token_id": 353,
+      "top_token_str": " M",
+      "top_token_count": 5,
+      "top_token_fraction_of_positives": 0.07142857142857142,
+      "n_positives_used": 70
+    }
+  },
+  {
+    "component_idx": 12122,
+    "category": "control_non_persistent",
+    "module": "h.1.attn.v_proj",
+    "local_idx": 346,
+    "mean_gate": 0.16098621487617493,
+    "persistence": 0.2152963671128107,
+    "label": "contextual references",
+    "hypothesis": "The gate fires strongly when the snippets contain contextual references to specific subjects or entities, often related to fishing or legal matters.",
+    "scores": {
+      "n": 60,
+      "tp": 1,
+      "fp": 3,
+      "tn": 27,
+      "fn": 29,
+      "accuracy": 0.4666666666666667,
+      "balanced_accuracy": 0.4666666666666667,
+      "precision": 0.25,
+      "recall": 0.03333333333333333,
+      "specificity": 0.9
+    },
+    "random_label_scores": {
+      "n": 60,
+      "tp": 4,
+      "fp": 0,
+      "tn": 30,
+      "fn": 26,
+      "accuracy": 0.5666666666666667,
+      "balanced_accuracy": 0.5666666666666667,
+      "precision": 1.0,
+      "recall": 0.13333333333333333,
+      "specificity": 1.0
+    },
+    "token_identity_baseline": {
+      "top_token_id": 187,
+      "top_token_str": "\n",
+      "top_token_count": 6,
+      "top_token_fraction_of_positives": 0.08571428571428572,
+      "n_positives_used": 70
+    }
+  },
+  {
+    "component_idx": 29691,
+    "category": "control_non_persistent",
+    "module": "h.3.attn.k_proj",
+    "local_idx": 507,
+    "mean_gate": 0.1506887972354889,
+    "persistence": 0.22996124821537833,
+    "label": "legal terminology and processes",
+    "hypothesis": "The gate fires strongly in contexts involving legal terms, appeals, and judicial processes.",
+    "scores": {
+      "n": 55,
+      "tp": 0,
+      "fp": 11,
+      "tn": 16,
+      "fn": 28,
+      "accuracy": 0.2909090909090909,
+      "balanced_accuracy": 0.2962962962962963,
+      "precision": 0.0,
+      "recall": 0.0,
+      "specificity": 0.5925925925925926
+    },
+    "random_label_scores": {
+      "n": 55,
+      "tp": 6,
+      "fp": 5,
+      "tn": 22,
+      "fn": 22,
+      "accuracy": 0.509090909090909,
+      "balanced_accuracy": 0.5145502645502645,
+      "precision": 0.5454545454545454,
+      "recall": 0.21428571428571427,
+      "specificity": 0.8148148148148148
+    },
+    "token_identity_baseline": {
+      "top_token_id": 4549,
+      "top_token_str": " appeal",
+      "top_token_count": 3,
+      "top_token_fraction_of_positives": 0.04285714285714286,
+      "n_positives_used": 70
+    }
+  },
+  {
+    "component_idx": 12722,
+    "category": "control_non_persistent",
+    "module": "h.1.attn.v_proj",
+    "local_idx": 946,
+    "mean_gate": 0.15034440159797668,
+    "persistence": 0.20715166461159062,
+    "label": "unclear",
+    "hypothesis": "The snippets do not exhibit a coherent pattern.",
+    "scores": {
+      "n": 60,
+      "tp": 0,
+      "fp": 0,
+      "tn": 30,
+      "fn": 30,
+      "accuracy": 0.5,
+      "balanced_accuracy": 0.5,
+      "precision": 0.0,
+      "recall": 0.0,
+      "specificity": 1.0
+    },
+    "random_label_scores": {
+      "n": 60,
+      "tp": 0,
+      "fp": 0,
+      "tn": 30,
+      "fn": 30,
+      "accuracy": 0.5,
+      "balanced_accuracy": 0.5,
+      "precision": 0.0,
+      "recall": 0.0,
+      "specificity": 1.0
+    },
+    "token_identity_baseline": {
+      "top_token_id": 578,
+      "top_token_str": "_{",
+      "top_token_count": 5,
+      "top_token_fraction_of_positives": 0.07142857142857142,
+      "n_positives_used": 70
+    }
+  },
+  {
+    "component_idx": 30902,
+    "category": "control_non_persistent",
+    "module": "h.3.attn.q_proj",
+    "local_idx": 182,
+    "mean_gate": 0.14583168923854828,
+    "persistence": 0.29529919024082446,
+    "label": "contextual connections",
+    "hypothesis": "The gate fires strongly when the focus token indicates a connection or relationship between concepts in a contextually rich manner.",
+    "scores": {
+      "n": 60,
+      "tp": 1,
+      "fp": 3,
+      "tn": 27,
+      "fn": 29,
+      "accuracy": 0.4666666666666667,
+      "balanced_accuracy": 0.4666666666666667,
+      "precision": 0.25,
+      "recall": 0.03333333333333333,
+      "specificity": 0.9
+    },
+    "random_label_scores": {
+      "n": 60,
+      "tp": 1,
+      "fp": 3,
+      "tn": 27,
+      "fn": 29,
+      "accuracy": 0.4666666666666667,
+      "balanced_accuracy": 0.4666666666666667,
+      "precision": 0.25,
+      "recall": 0.03333333333333333,
+      "specificity": 0.9
+    },
+    "token_identity_baseline": {
+      "top_token_id": 253,
+      "top_token_str": " the",
+      "top_token_count": 13,
+      "top_token_fraction_of_positives": 0.18571428571428572,
+      "n_positives_used": 70
+    }
+  },
+  {
+    "component_idx": 38705,
+    "category": "control_non_persistent",
+    "module": "h.3.mlp.down_proj",
+    "local_idx": 3377,
+    "mean_gate": 0.1327698677778244,
+    "persistence": 0.28251277287505805,
+    "label": "frequency calculation context",
+    "hypothesis": "The gate fires strongly when discussing the calculation of frequencies or paths in a dataframe context, particularly involving marketing channels.",
+    "scores": {
+      "n": 44,
+      "tp": 0,
+      "fp": 11,
+      "tn": 13,
+      "fn": 20,
+      "accuracy": 0.29545454545454547,
+      "balanced_accuracy": 0.2708333333333333,
+      "precision": 0.0,
+      "recall": 0.0,
+      "specificity": 0.5416666666666666
+    },
+    "random_label_scores": {
+      "n": 44,
+      "tp": 8,
+      "fp": 3,
+      "tn": 20,
+      "fn": 13,
+      "accuracy": 0.6363636363636364,
+      "balanced_accuracy": 0.6252587991718426,
+      "precision": 0.7272727272727273,
+      "recall": 0.38095238095238093,
+      "specificity": 0.8695652173913043
+    },
+    "token_identity_baseline": {
+      "top_token_id": 15,
+      "top_token_str": ".",
+      "top_token_count": 8,
+      "top_token_fraction_of_positives": 0.11428571428571428,
+      "n_positives_used": 70
+    }
+  },
+  {
+    "component_idx": 4421,
+    "category": "control_non_persistent",
+    "module": "h.0.mlp.c_fc",
+    "local_idx": 1349,
+    "mean_gate": 0.13061915338039398,
+    "persistence": 0.14036729442040005,
+    "label": "contextual references to events",
+    "hypothesis": "The gate fires strongly when the snippets contain contextual references to specific events or actions involving characters or locations.",
+    "scores": {
+      "n": 60,
+      "tp": 6,
+      "fp": 8,
+      "tn": 22,
+      "fn": 24,
+      "accuracy": 0.4666666666666667,
+      "balanced_accuracy": 0.4666666666666667,
+      "precision": 0.42857142857142855,
+      "recall": 0.2,
+      "specificity": 0.7333333333333333
+    },
+    "random_label_scores": {
+      "n": 60,
+      "tp": 8,
+      "fp": 6,
+      "tn": 24,
+      "fn": 22,
+      "accuracy": 0.5333333333333333,
+      "balanced_accuracy": 0.5333333333333333,
+      "precision": 0.5714285714285714,
+      "recall": 0.26666666666666666,
+      "specificity": 0.8
+    },
+    "token_identity_baseline": {
+      "top_token_id": 282,
+      "top_token_str": "le",
+      "top_token_count": 6,
+      "top_token_fraction_of_positives": 0.08571428571428572,
+      "n_positives_used": 70
+    }
+  },
+  {
+    "component_idx": 6290,
+    "category": "control_non_persistent",
+    "module": "h.0.mlp.down_proj",
+    "local_idx": 146,
+    "mean_gate": 0.12938812375068665,
+    "persistence": 0.2529639629064444,
+    "label": "temporal and causal references",
+    "hypothesis": "The gate fires strongly when the text includes tokens that indicate a temporal sequence or causal relationship.",
+    "scores": {
+      "n": 60,
+      "tp": 1,
+      "fp": 8,
+      "tn": 22,
+      "fn": 29,
+      "accuracy": 0.38333333333333336,
+      "balanced_accuracy": 0.3833333333333333,
+      "precision": 0.1111111111111111,
+      "recall": 0.03333333333333333,
+      "specificity": 0.7333333333333333
+    },
+    "random_label_scores": {
+      "n": 60,
+      "tp": 3,
+      "fp": 6,
+      "tn": 24,
+      "fn": 27,
+      "accuracy": 0.45,
+      "balanced_accuracy": 0.45,
+      "precision": 0.3333333333333333,
+      "recall": 0.1,
+      "specificity": 0.8
+    },
+    "token_identity_baseline": {
+      "top_token_id": 840,
+      "top_token_str": " then",
+      "top_token_count": 2,
+      "top_token_fraction_of_positives": 0.02857142857142857,
+      "n_positives_used": 70
+    }
+  }
+]

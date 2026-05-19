@@ -1,0 +1,12 @@
+{
+  "n_persistent": 17,
+  "n_control": 12,
+  "persistent_mean_bal_acc": 0.6573517337969672,
+  "persistent_median_bal_acc": 0.5666666666666667,
+  "persistent_random_label_mean": 0.48446497721345594,
+  "persistent_n_above_0_7": 6,
+  "persistent_n_above_0_6": 8,
+  "control_mean_bal_acc": 0.40774060044893384,
+  "control_median_bal_acc": 0.4628787878787879,
+  "control_n_above_0_7": 0
+}

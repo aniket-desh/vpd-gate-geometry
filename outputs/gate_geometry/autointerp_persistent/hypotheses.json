@@ -1,0 +1,509 @@
+[
+  {
+    "component_idx": 31689,
+    "module": "h.3.attn.v_proj",
+    "local_idx": 457,
+    "category": "persistent",
+    "mean_gate": 0.03768543526530266,
+    "persistence": 0.952513966480447,
+    "token_identity_baseline": {
+      "top_token_id": 11,
+      "top_token_str": "*",
+      "top_token_count": 7,
+      "top_token_fraction_of_positives": 0.1,
+      "n_positives_used": 70
+    },
+    "label": "mathematical operations",
+    "hypothesis": "The gate fires strongly in snippets involving mathematical expressions and operations.",
+    "positive_cues": [
+      "Solve",
+      "Let",
+      "Suppose",
+      "=",
+      "+"
+    ],
+    "negative_cues": [
+      "n/a"
+    ],
+    "confidence": 0.0,
+    "notes": "The snippets consistently feature mathematical equations and operations, indicating a focus on problem-solving contexts.",
+    "n_train_positives": 40
+  },
+  {
+    "component_idx": 1048,
+    "module": "h.0.attn.o_proj",
+    "local_idx": 536,
+    "category": "persistent",
+    "mean_gate": 0.006990497000515461,
+    "persistence": 0.934322033898305,
+    "token_identity_baseline": {
+      "top_token_id": 24970,
+      "top_token_str": "\u0173",
+      "top_token_count": 4,
+      "top_token_fraction_of_positives": 0.05714285714285714,
+      "n_positives_used": 70
+    },
+    "label": "political discourse",
+    "hypothesis": "The gate fires strongly in snippets related to discussions about language rights and legislative actions in Northern Ireland.",
+    "positive_cues": [
+      "airi\u0161kai kalban\u010di\u0173 \u0160iaur\u0117s Airijos gyventoj\u0173 teis\u0117s",
+      "\u012fstatymas b\u016bt\u0173 priimtas skubiai",
+      "Pirmininkas D\u0117koju"
+    ],
+    "negative_cues": [
+      "nesusij\u0119 su kalbos teis\u0117mis",
+      "nepolitinis kontekstas"
+    ],
+    "confidence": 0.8,
+    "notes": "The snippets consistently reference the rights of Irish-speaking residents in Northern Ireland and legislative processes, indicating a focus on political and social issues.",
+    "n_train_positives": 40
+  },
+  {
+    "component_idx": 553,
+    "module": "h.0.attn.o_proj",
+    "local_idx": 41,
+    "category": "persistent",
+    "mean_gate": 0.03979913145303726,
+    "persistence": 0.8764818355640536,
+    "token_identity_baseline": {
+      "top_token_id": 9747,
+      "top_token_str": "ende",
+      "top_token_count": 2,
+      "top_token_fraction_of_positives": 0.02857142857142857,
+      "n_positives_used": 70
+    },
+    "label": "medical terminology focus",
+    "hypothesis": "The gate fires strongly in snippets that contain medical terminology related to respiratory and cardiovascular assessments.",
+    "positive_cues": [
+      "harttonen",
+      "ademgeruis",
+      "rhonchi",
+      "centraalveneuze druk"
+    ],
+    "negative_cues": [
+      "unclear context",
+      "non-medical terms"
+    ],
+    "confidence": 0.0,
+    "notes": "The snippets primarily focus on medical terms and descriptions, suggesting a pattern related to clinical language.",
+    "n_train_positives": 40
+  },
+  {
+    "component_idx": 1144,
+    "module": "h.0.attn.o_proj",
+    "local_idx": 632,
+    "category": "persistent",
+    "mean_gate": 0.006184340920299292,
+    "persistence": 0.8554502369668247,
+    "token_identity_baseline": {
+      "top_token_id": 257,
+      "top_token_str": "en",
+      "top_token_count": 4,
+      "top_token_fraction_of_positives": 0.05714285714285714,
+      "n_positives_used": 70
+    },
+    "label": "report expansion context",
+    "hypothesis": "The gate fires strongly in contexts where there is a discussion about extending the mandate or contributions related to reports or expert evaluations.",
+    "positive_cues": [
+      "udvide mandatet",
+      "bidrage endnu mere",
+      "udarbejdede rapporten"
+    ],
+    "negative_cues": [
+      "folkedrabene",
+      "etniske sp\u00e6ndinger",
+      "ophedet debat"
+    ],
+    "confidence": 0.8,
+    "notes": "The snippets consistently relate to the theme of extending contributions or mandates in the context of reports, particularly in discussions involving Kofi Annan and expert evaluations.",
+    "n_train_positives": 40
+  },
+  {
+    "component_idx": 841,
+    "module": "h.0.attn.o_proj",
+    "local_idx": 329,
+    "category": "persistent",
+    "mean_gate": 0.13998228311538696,
+    "persistence": 0.8419974115616912,
+    "token_identity_baseline": {
+      "top_token_id": 5546,
+      "top_token_str": "car",
+      "top_token_count": 3,
+      "top_token_fraction_of_positives": 0.04285714285714286,
+      "n_positives_used": 70
+    },
+    "label": "equations and scientific context",
+    "hypothesis": "The gate fires strongly in snippets that involve scientific equations, references to tables, and discussions of results in a research context.",
+    "positive_cues": [
+      "From Eq.",
+      "Table",
+      "metallicity results",
+      "fit",
+      "velocity"
+    ],
+    "negative_cues": [
+      "unclear context",
+      "non-scientific terms"
+    ],
+    "confidence": 0.8,
+    "notes": "The snippets predominantly relate to scientific discussions, particularly in the context of equations and data analysis.",
+    "n_train_positives": 40
+  },
+  {
+    "component_idx": 22656,
+    "module": "h.2.mlp.c_fc",
+    "local_idx": 128,
+    "category": "persistent",
+    "mean_gate": 0.03429972752928734,
+    "persistence": 0.824038045827929,
+    "token_identity_baseline": {
+      "top_token_id": 9124,
+      "top_token_str": "\u017e",
+      "top_token_count": 3,
+      "top_token_fraction_of_positives": 0.04285714285714286,
+      "n_positives_used": 70
+    },
+    "label": "contextual markers in sentences",
+    "hypothesis": "The gate fires strongly when the focus token appears in the context of numerical or structural information related to environmental or economic topics.",
+    "positive_cues": [
+      "dvacet tis\u00edc hektar\u016f",
+      "75%",
+      "hmotn\u00fdch \u0161kod",
+      "strukt\u016brini\u0173 fond\u0173"
+    ],
+    "negative_cues": [
+      "vhodn\u00e9ho fondu",
+      "p\u0159\u00edrodn\u00ed katastrofou"
+    ],
+    "confidence": 0.0,
+    "notes": "The snippets contain a mix of languages and contexts, making it difficult to identify a coherent pattern.",
+    "n_train_positives": 40
+  },
+  {
+    "component_idx": 32141,
+    "module": "h.3.attn.v_proj",
+    "local_idx": 909,
+    "category": "persistent",
+    "mean_gate": 0.024540936574339867,
+    "persistence": 0.8174454828660436,
+    "token_identity_baseline": {
+      "top_token_id": 372,
+      "top_token_str": " de",
+      "top_token_count": 5,
+      "top_token_fraction_of_positives": 0.07142857142857142,
+      "n_positives_used": 70
+    },
+    "label": "breathing difficulties context",
+    "hypothesis": "The gate fires strongly in contexts discussing breathing difficulties and related medical conditions.",
+    "positive_cues": [
+      "kortademig",
+      "ademarbeid",
+      "hypoxemie",
+      "hyperinflatiestand"
+    ],
+    "negative_cues": [
+      "geen cyanose",
+      "magere pati\u00ebnt"
+    ],
+    "confidence": 0.0,
+    "notes": "The snippets consistently refer to symptoms and conditions related to respiratory issues, suggesting a focus on medical descriptions of breathing difficulties.",
+    "n_train_positives": 40
+  },
+  {
+    "component_idx": 34638,
+    "module": "h.3.mlp.c_fc",
+    "local_idx": 2382,
+    "category": "persistent",
+    "mean_gate": 0.09396693855524063,
+    "persistence": 0.8168340506934482,
+    "token_identity_baseline": {
+      "top_token_id": 2981,
+      "top_token_str": "xi",
+      "top_token_count": 4,
+      "top_token_fraction_of_positives": 0.05714285714285714,
+      "n_positives_used": 70
+    },
+    "label": "mathematical expressions",
+    "hypothesis": "The gate fires strongly in contexts involving mathematical expressions and definitions, particularly when introducing or referencing functions and operations.",
+    "positive_cues": [
+      "<<So>>",
+      "<<given>>",
+      "<<G(\u03be,\u03b7)>>",
+      "<<N>>",
+      "<<O>>"
+    ],
+    "negative_cues": [
+      "<<...>>",
+      "<<label>>",
+      "<<right>>"
+    ],
+    "confidence": 0.0,
+    "notes": "The snippets contain a mix of mathematical notation and context, but the overall coherence is low due to the fragmented nature of the text.",
+    "n_train_positives": 40
+  },
+  {
+    "component_idx": 10532,
+    "module": "h.1.attn.o_proj",
+    "local_idx": 292,
+    "category": "persistent",
+    "mean_gate": 0.035737890750169754,
+    "persistence": 0.8165654813529922,
+    "token_identity_baseline": {
+      "top_token_id": 187,
+      "top_token_str": "\n",
+      "top_token_count": 9,
+      "top_token_fraction_of_positives": 0.12857142857142856,
+      "n_positives_used": 70
+    },
+    "label": "contextual growth indicators",
+    "hypothesis": "The gate fires strongly when discussing positive growth or transitions in various contexts.",
+    "positive_cues": [
+      "move towards positive growth",
+      "greater quantity of melting/solidification transitions"
+    ],
+    "negative_cues": [
+      "random symbols",
+      "disconnected phrases"
+    ],
+    "confidence": 0.8,
+    "notes": "The snippets generally relate to themes of growth or change, suggesting a focus on positive developments.",
+    "n_train_positives": 40
+  },
+  {
+    "component_idx": 34107,
+    "module": "h.3.mlp.c_fc",
+    "local_idx": 1851,
+    "category": "persistent",
+    "mean_gate": 0.056618183851242065,
+    "persistence": 0.8163596966413867,
+    "token_identity_baseline": {
+      "top_token_id": 187,
+      "top_token_str": "\n",
+      "top_token_count": 4,
+      "top_token_fraction_of_positives": 0.05714285714285714,
+      "n_positives_used": 70
+    },
+    "label": "medical terminology context",
+    "hypothesis": "The gate fires strongly in snippets that contain medical terminology and descriptions related to health conditions.",
+    "positive_cues": [
+      "productieve hoest",
+      "vermoeidheid",
+      "thorax",
+      "BMI"
+    ],
+    "negative_cues": [
+      "random phrases",
+      "unrelated topics"
+    ],
+    "confidence": 0.0,
+    "notes": "The snippets are primarily focused on medical terms and descriptions, suggesting a context related to health assessments.",
+    "n_train_positives": 40
+  },
+  {
+    "component_idx": 1234,
+    "module": "h.0.attn.o_proj",
+    "local_idx": 722,
+    "category": "persistent",
+    "mean_gate": 0.03425734490156174,
+    "persistence": 0.8134920634920635,
+    "token_identity_baseline": {
+      "top_token_id": 11,
+      "top_token_str": "*",
+      "top_token_count": 9,
+      "top_token_fraction_of_positives": 0.12857142857142856,
+      "n_positives_used": 70
+    },
+    "label": "mathematical expressions",
+    "hypothesis": "The gate fires strongly when the snippets involve mathematical operations or equations.",
+    "positive_cues": [
+      "Let",
+      "Solve",
+      "Suppose",
+      "="
+    ],
+    "negative_cues": [
+      "unclear context",
+      "narrative text"
+    ],
+    "confidence": 0.9,
+    "notes": "The snippets predominantly contain mathematical statements and operations, suggesting a focus on mathematical reasoning.",
+    "n_train_positives": 40
+  },
+  {
+    "component_idx": 20566,
+    "module": "h.2.attn.o_proj",
+    "local_idx": 598,
+    "category": "persistent",
+    "mean_gate": 0.2319122552871704,
+    "persistence": 0.8132613419371831,
+    "token_identity_baseline": {
+      "top_token_id": 187,
+      "top_token_str": "\n",
+      "top_token_count": 6,
+      "top_token_fraction_of_positives": 0.08571428571428572,
+      "n_positives_used": 70
+    },
+    "label": "contextual evaluation of performance",
+    "hypothesis": "The gate fires strongly when discussing the evaluation of performance metrics in a sports context, particularly related to penalties and player actions.",
+    "positive_cues": [
+      "penalty",
+      "snaps taken",
+      "account for",
+      "grad for Mosley"
+    ],
+    "negative_cues": [
+      "exponential function",
+      "least square",
+      "data"
+    ],
+    "confidence": 0.8,
+    "notes": "The snippets consistently involve discussions about player performance metrics, particularly in relation to penalties and the number of snaps, indicating a focus on evaluating player actions.",
+    "n_train_positives": 40
+  },
+  {
+    "component_idx": 11027,
+    "module": "h.1.attn.o_proj",
+    "local_idx": 787,
+    "category": "persistent",
+    "mean_gate": 0.0016468303510919213,
+    "persistence": 0.8125,
+    "token_identity_baseline": {
+      "top_token_id": 187,
+      "top_token_str": "\n",
+      "top_token_count": 28,
+      "top_token_fraction_of_positives": 0.4,
+      "n_positives_used": 70
+    },
+    "label": "question formation",
+    "hypothesis": "The gate fires strongly when the snippets contain questions that seek clarification or instructions on specific topics.",
+    "positive_cues": [
+      "How to",
+      "Fit exponential",
+      "frequency of row value order"
+    ],
+    "negative_cues": [
+      "A:",
+      "for more information",
+      "g=1.000"
+    ],
+    "confidence": 0.0,
+    "notes": "The snippets primarily consist of questions, often related to programming or data analysis, indicating a pattern in the type of inquiries being made.",
+    "n_train_positives": 40
+  },
+  {
+    "component_idx": 32708,
+    "module": "h.3.mlp.c_fc",
+    "local_idx": 452,
+    "category": "persistent",
+    "mean_gate": 0.2522973120212555,
+    "persistence": 0.8114605929139552,
+    "token_identity_baseline": {
+      "top_token_id": 187,
+      "top_token_str": "\n",
+      "top_token_count": 5,
+      "top_token_fraction_of_positives": 0.07142857142857142,
+      "n_positives_used": 70
+    },
+    "label": "contextual importance markers",
+    "hypothesis": "The gate fires strongly when the focus token contributes to the contextual flow or structure of the sentence.",
+    "positive_cues": [
+      "important",
+      "consider",
+      "plunge",
+      "horse",
+      "ownership"
+    ],
+    "negative_cues": [
+      "random",
+      "disconnected",
+      "irrelevant"
+    ],
+    "confidence": 0.8,
+    "notes": "The snippets consistently involve tokens that are integral to the meaning or structure of the sentences, indicating their contextual importance.",
+    "n_train_positives": 40
+  },
+  {
+    "component_idx": 36407,
+    "module": "h.3.mlp.down_proj",
+    "local_idx": 1079,
+    "category": "persistent",
+    "mean_gate": 0.0010545204859226942,
+    "persistence": 0.8088235294117647,
+    "token_identity_baseline": {
+      "top_token_id": 6271,
+      "top_token_str": " --------",
+      "top_token_count": 16,
+      "top_token_fraction_of_positives": 0.23529411764705882,
+      "n_positives_used": 68
+    },
+    "label": "unclear",
+    "hypothesis": "The snippets do not exhibit a coherent pattern.",
+    "positive_cues": [],
+    "negative_cues": [],
+    "confidence": 0,
+    "notes": "The snippets appear to be a mix of numerical data, identifiers, and fragmented sentences without a clear thematic connection.",
+    "n_train_positives": 40
+  },
+  {
+    "component_idx": 9700,
+    "module": "h.0.mlp.down_proj",
+    "local_idx": 3556,
+    "category": "persistent",
+    "mean_gate": 0.03076622262597084,
+    "persistence": 0.8085728202630297,
+    "token_identity_baseline": {
+      "top_token_id": 546,
+      "top_token_str": " en",
+      "top_token_count": 3,
+      "top_token_fraction_of_positives": 0.04285714285714286,
+      "n_positives_used": 70
+    },
+    "label": "health-related observations",
+    "hypothesis": "The gate fires strongly in contexts discussing health symptoms and measurements.",
+    "positive_cues": [
+      "vermoeidheid",
+      "overgewicht",
+      "productieve hoest",
+      "lengte en gewicht",
+      "tonvormige thorax"
+    ],
+    "negative_cues": [
+      "random phrases",
+      "unrelated topics"
+    ],
+    "confidence": 0.0,
+    "notes": "The snippets consistently relate to health conditions and measurements, indicating a focus on medical assessments.",
+    "n_train_positives": 40
+  },
+  {
+    "component_idx": 30209,
+    "module": "h.3.attn.o_proj",
+    "local_idx": 513,
+    "category": "persistent",
+    "mean_gate": 0.023158270865678787,
+    "persistence": 0.8073154800783802,
+    "token_identity_baseline": {
+      "top_token_id": 13,
+      "top_token_str": ",",
+      "top_token_count": 2,
+      "top_token_fraction_of_positives": 0.02857142857142857,
+      "n_positives_used": 70
+    },
+    "label": "medical terminology focus",
+    "hypothesis": "The gate fires strongly when discussing specific medical terms related to lung function and characteristics.",
+    "positive_cues": [
+      "thorax",
+      "expiratie",
+      "hypersonore",
+      "percussie",
+      "longen"
+    ],
+    "negative_cues": [
+      "general language",
+      "non-medical terms"
+    ],
+    "confidence": 0.0,
+    "notes": "The snippets consistently reference medical terminology, particularly related to lung assessments, indicating a focus on specialized vocabulary.",
+    "n_train_positives": 40
+  }
+]

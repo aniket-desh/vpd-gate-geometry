@@ -1,0 +1,382 @@
+[
+  {
+    "component_idx": 309,
+    "module": "h.0.attn.k_proj",
+    "local_idx": 309,
+    "category": "control_non_persistent",
+    "mean_gate": 0.35967639088630676,
+    "persistence": 0.298,
+    "token_identity_baseline": {
+      "top_token_id": 15,
+      "top_token_str": ".",
+      "top_token_count": 9,
+      "top_token_fraction_of_positives": 0.12857142857142856,
+      "n_positives_used": 70
+    },
+    "label": "punctuation in legal context",
+    "hypothesis": "The gate fires strongly when punctuation marks are used in legal citations or statements.",
+    "positive_cues": [
+      ",",
+      ".",
+      "(",
+      ")",
+      "[",
+      "]"
+    ],
+    "negative_cues": [],
+    "confidence": 0.0,
+    "notes": "The snippets consistently include legal references and punctuation, indicating a pattern related to legal documentation.",
+    "n_train_positives": 40
+  },
+  {
+    "component_idx": 21262,
+    "module": "h.2.attn.q_proj",
+    "local_idx": 270,
+    "category": "control_non_persistent",
+    "mean_gate": 0.22730571031570435,
+    "persistence": 0.17543507362784472,
+    "token_identity_baseline": {
+      "top_token_id": 14736,
+      "top_token_str": " Search",
+      "top_token_count": 4,
+      "top_token_fraction_of_positives": 0.05714285714285714,
+      "n_positives_used": 70
+    },
+    "label": "dataframe analysis queries",
+    "hypothesis": "The gate fires strongly when the snippets involve queries related to analyzing or manipulating dataframes in Python, particularly with respect to marketing channels and frequencies.",
+    "positive_cues": [
+      "dataframe",
+      "frequencies",
+      "path to purchase",
+      "Marketing_Channel"
+    ],
+    "negative_cues": [
+      "exponential",
+      "constant",
+      "least square"
+    ],
+    "confidence": 0.8,
+    "notes": "The snippets predominantly focus on data manipulation tasks in Python, especially using pandas, which suggests a coherent theme.",
+    "n_train_positives": 40
+  },
+  {
+    "component_idx": 34560,
+    "module": "h.3.mlp.c_fc",
+    "local_idx": 2304,
+    "category": "control_non_persistent",
+    "mean_gate": 0.17226001620292664,
+    "persistence": 0.23402759469197645,
+    "token_identity_baseline": {
+      "top_token_id": 273,
+      "top_token_str": " of",
+      "top_token_count": 7,
+      "top_token_fraction_of_positives": 0.1,
+      "n_positives_used": 70
+    },
+    "label": "contextual linking phrases",
+    "hypothesis": "The gate fires strongly when the focus token is used to introduce or reference additional information, explanations, or conditions within the text.",
+    "positive_cues": [
+      "that",
+      "see",
+      "Let",
+      "by",
+      "on",
+      "called",
+      "for",
+      "in",
+      "with",
+      "if",
+      "at",
+      "to",
+      "of",
+      "section",
+      "before",
+      "summarize"
+    ],
+    "negative_cues": [],
+    "confidence": 1.0,
+    "notes": "The snippets consistently feature tokens that serve to connect ideas or provide context, indicating a pattern in the use of linking phrases.",
+    "n_train_positives": 40
+  },
+  {
+    "component_idx": 30780,
+    "module": "h.3.attn.q_proj",
+    "local_idx": 60,
+    "category": "control_non_persistent",
+    "mean_gate": 0.1655326634645462,
+    "persistence": 0.28528780669838605,
+    "token_identity_baseline": {
+      "top_token_id": 15,
+      "top_token_str": ".",
+      "top_token_count": 5,
+      "top_token_fraction_of_positives": 0.07142857142857142,
+      "n_positives_used": 70
+    },
+    "label": "unclear",
+    "hypothesis": "The snippets do not exhibit a coherent pattern or theme.",
+    "positive_cues": [],
+    "negative_cues": [],
+    "confidence": 0,
+    "notes": "The snippets vary widely in context and structure, making it difficult to identify a commonality.",
+    "n_train_positives": 40
+  },
+  {
+    "component_idx": 19680,
+    "module": "h.2.attn.k_proj",
+    "local_idx": 224,
+    "category": "control_non_persistent",
+    "mean_gate": 0.1643633097410202,
+    "persistence": 0.22864345065820185,
+    "token_identity_baseline": {
+      "top_token_id": 353,
+      "top_token_str": " M",
+      "top_token_count": 5,
+      "top_token_fraction_of_positives": 0.07142857142857142,
+      "n_positives_used": 70
+    },
+    "label": "mathematical symbols and variables",
+    "hypothesis": "The gate fires strongly in snippets that contain mathematical symbols and variables, indicating a focus on technical or scientific expressions.",
+    "positive_cues": [
+      "<<theta>>",
+      "<<R>>_e",
+      "<<Sigma>>",
+      "<<N>>_f",
+      "<<J>>_f"
+    ],
+    "negative_cues": [
+      "<<cos>>",
+      "<<sin>>",
+      "<<partial>>",
+      "<<action>>",
+      "<<rotational>>"
+    ],
+    "confidence": 0.8,
+    "notes": "The snippets predominantly feature mathematical notation and terminology, suggesting a context related to physics or mathematics.",
+    "n_train_positives": 40
+  },
+  {
+    "component_idx": 12122,
+    "module": "h.1.attn.v_proj",
+    "local_idx": 346,
+    "category": "control_non_persistent",
+    "mean_gate": 0.16098621487617493,
+    "persistence": 0.2152963671128107,
+    "token_identity_baseline": {
+      "top_token_id": 187,
+      "top_token_str": "\n",
+      "top_token_count": 6,
+      "top_token_fraction_of_positives": 0.08571428571428572,
+      "n_positives_used": 70
+    },
+    "label": "contextual references",
+    "hypothesis": "The gate fires strongly when the snippets contain contextual references to specific subjects or entities, often related to fishing or legal matters.",
+    "positive_cues": [
+      "fishing benefits",
+      "water form",
+      "judgment of dismissal"
+    ],
+    "negative_cues": [
+      "random comments",
+      "off-topic discussions"
+    ],
+    "confidence": 0.8,
+    "notes": "The snippets exhibit a pattern of discussing specific topics, particularly fishing and legal contexts, which may trigger the gate.",
+    "n_train_positives": 40
+  },
+  {
+    "component_idx": 29691,
+    "module": "h.3.attn.k_proj",
+    "local_idx": 507,
+    "category": "control_non_persistent",
+    "mean_gate": 0.1506887972354889,
+    "persistence": 0.22996124821537833,
+    "token_identity_baseline": {
+      "top_token_id": 4549,
+      "top_token_str": " appeal",
+      "top_token_count": 3,
+      "top_token_fraction_of_positives": 0.04285714285714286,
+      "n_positives_used": 70
+    },
+    "label": "legal terminology and processes",
+    "hypothesis": "The gate fires strongly in contexts involving legal terms, appeals, and judicial processes.",
+    "positive_cues": [
+      "<< attorney>>",
+      "<< orders>>",
+      "<< State>>",
+      "<< appeal>>",
+      "<< jurisdiction>>",
+      "<< judgment>>",
+      "<< evidence>>",
+      "<< motions>>",
+      "<< findings>>",
+      "<< transcript>>",
+      "<< trial>>",
+      "<< right>>",
+      "<< review>>",
+      "<< criminal>>",
+      "<< section>>"
+    ],
+    "negative_cues": [
+      "<< financial>>",
+      "<< phone>>",
+      "<< Daily>>",
+      "<< told>>",
+      "<< Pen>>"
+    ],
+    "confidence": 0.9,
+    "notes": "The majority of snippets relate to legal contexts, particularly focusing on appeals and judicial terminology.",
+    "n_train_positives": 40
+  },
+  {
+    "component_idx": 12722,
+    "module": "h.1.attn.v_proj",
+    "local_idx": 946,
+    "category": "control_non_persistent",
+    "mean_gate": 0.15034440159797668,
+    "persistence": 0.20715166461159062,
+    "token_identity_baseline": {
+      "top_token_id": 578,
+      "top_token_str": "_{",
+      "top_token_count": 5,
+      "top_token_fraction_of_positives": 0.07142857142857142,
+      "n_positives_used": 70
+    },
+    "label": "unclear",
+    "hypothesis": "The snippets do not exhibit a coherent pattern.",
+    "positive_cues": [],
+    "negative_cues": [],
+    "confidence": 0,
+    "notes": "The snippets vary widely in context and structure, making it difficult to identify a common theme or pattern.",
+    "n_train_positives": 40
+  },
+  {
+    "component_idx": 30902,
+    "module": "h.3.attn.q_proj",
+    "local_idx": 182,
+    "category": "control_non_persistent",
+    "mean_gate": 0.14583168923854828,
+    "persistence": 0.29529919024082446,
+    "token_identity_baseline": {
+      "top_token_id": 253,
+      "top_token_str": " the",
+      "top_token_count": 13,
+      "top_token_fraction_of_positives": 0.18571428571428572,
+      "n_positives_used": 70
+    },
+    "label": "contextual connections",
+    "hypothesis": "The gate fires strongly when the focus token indicates a connection or relationship between concepts in a contextually rich manner.",
+    "positive_cues": [
+      "a",
+      "that",
+      "the",
+      "in",
+      "one",
+      "of",
+      "between",
+      "for",
+      "so",
+      "again",
+      "all",
+      "identifying"
+    ],
+    "negative_cues": [],
+    "confidence": 0.0,
+    "notes": "The snippets exhibit a variety of contexts, but they all involve tokens that serve to establish relationships or connections between ideas, suggesting a pattern of contextual relevance.",
+    "n_train_positives": 40
+  },
+  {
+    "component_idx": 38705,
+    "module": "h.3.mlp.down_proj",
+    "local_idx": 3377,
+    "category": "control_non_persistent",
+    "mean_gate": 0.1327698677778244,
+    "persistence": 0.28251277287505805,
+    "token_identity_baseline": {
+      "top_token_id": 15,
+      "top_token_str": ".",
+      "top_token_count": 8,
+      "top_token_fraction_of_positives": 0.11428571428571428,
+      "n_positives_used": 70
+    },
+    "label": "frequency calculation context",
+    "hypothesis": "The gate fires strongly when discussing the calculation of frequencies or paths in a dataframe context, particularly involving marketing channels.",
+    "positive_cues": [
+      "frequencies of path to purchase",
+      "form of dictionary",
+      "row value of marketing channel column"
+    ],
+    "negative_cues": [
+      "more information",
+      "how to get frequency"
+    ],
+    "confidence": 0.0,
+    "notes": "The snippets are focused on a specific task related to data manipulation in Python Pandas, but the presence of noise and repetitive structures makes it difficult to ascertain a clear pattern.",
+    "n_train_positives": 40
+  },
+  {
+    "component_idx": 4421,
+    "module": "h.0.mlp.c_fc",
+    "local_idx": 1349,
+    "category": "control_non_persistent",
+    "mean_gate": 0.13061915338039398,
+    "persistence": 0.14036729442040005,
+    "token_identity_baseline": {
+      "top_token_id": 282,
+      "top_token_str": "le",
+      "top_token_count": 6,
+      "top_token_fraction_of_positives": 0.08571428571428572,
+      "n_positives_used": 70
+    },
+    "label": "contextual references to events",
+    "hypothesis": "The gate fires strongly when the snippets contain contextual references to specific events or actions involving characters or locations.",
+    "positive_cues": [
+      "<<Kadiak>> Island",
+      "<<Greer>>",
+      "<<S>>teeplechase",
+      "<<Ben>> Bruce"
+    ],
+    "negative_cues": [
+      "<<the>>",
+      "<<and>>",
+      "<<to>>"
+    ],
+    "confidence": 0.8,
+    "notes": "The focus tokens often relate to names or specific terms that anchor the narrative in particular events or actions.",
+    "n_train_positives": 40
+  },
+  {
+    "component_idx": 6290,
+    "module": "h.0.mlp.down_proj",
+    "local_idx": 146,
+    "category": "control_non_persistent",
+    "mean_gate": 0.12938812375068665,
+    "persistence": 0.2529639629064444,
+    "token_identity_baseline": {
+      "top_token_id": 840,
+      "top_token_str": " then",
+      "top_token_count": 2,
+      "top_token_fraction_of_positives": 0.02857142857142857,
+      "n_positives_used": 70
+    },
+    "label": "temporal and causal references",
+    "hypothesis": "The gate fires strongly when the text includes tokens that indicate a temporal sequence or causal relationship.",
+    "positive_cues": [
+      "<<met>>",
+      "<<Today>>",
+      "<<caused>>",
+      "<<Once>>",
+      "<<then>>",
+      "<<including>>",
+      "<<as>>"
+    ],
+    "negative_cues": [
+      "<<etc>>",
+      "<<good>>",
+      "<<early>>",
+      "<<need>>"
+    ],
+    "confidence": 0.8,
+    "notes": "The snippets often describe events or processes that involve a sequence of actions or conditions, suggesting a focus on temporal and causal language.",
+    "n_train_positives": 40
+  }
+]

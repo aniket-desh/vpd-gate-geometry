@@ -31,6 +31,13 @@ TL;DR:
   tokens share more support than random pairs (Jaccard 0.156 vs
   0.067), but almost every token still has a distinct active-set
   signature.
+- The candidate persistent subspace (17 components after filtering
+  out always-on ones) contains some interpretable features.
+  `gpt-4o-mini`-generated labels predict held-out gate activations
+  with mean balanced accuracy **0.66**, vs **0.48** under random-label
+  shuffle and **0.41** for matched non-persistent components. The
+  strongest hits are math-expression detectors across three modules
+  in layers 0 and 3.
 
 ![Cosine kernel on the top-4,096 alive VPD components (left) compared to a column-wise row-shuffled null (right) that preserves each component's marginal distribution but destroys all cross-component co-activation. Both panels share the same row ordering, colormap, and colour scale; the dense upper-left block in the real panel is visibly absent on the right.](../outputs/gate_geometry/pile4L_v2/plots/10_kernel_real_vs_null.png)
 
@@ -313,6 +320,92 @@ co-activation will see the column geometry but will not surface the
 persistent subspace, since those components are rare in any single
 token.
 
+## Experiment 6: interpreting the candidate persistent components
+
+The kernel views describe geometry; they don't say what any component
+*does*. As a small mech-interp case study, I take the candidate
+persistent subspace surfaced by Experiment 5 and ask: do these
+components correspond to interpretable contexts, and do
+LLM-generated hypotheses predict held-out gate activations above
+chance?
+
+**Selection.** I take alive components with persistence > 0.8 and
+*excess persistence* (persistence − marginal density) > 0.5. The
+excess filter drops "always-on" components whose persistence is
+trivially high because their density is. That leaves **17 candidate
+persistent components** spanning all four layers.
+
+**Pipeline.** For each component:
+
+1. Collect 40 top-gate train snippets, 30 held-out positive snippets,
+   and 30 matched-low-gate negative snippets (preferring same-token
+   matches when possible), with the focus token marked.
+2. Ask `gpt-4o-mini` for a one-sentence hypothesis from train
+   positives only.
+3. Give the model the hypothesis plus a *shuffled, unlabeled* mix of
+   the 30 held-out positives + 30 negatives, and ask it to classify
+   each one.
+4. Score balanced accuracy of the LLM's classifications against the
+   ground-truth held-out labels.
+
+The LLM is used as a hypothesis generator + classifier, not as
+ground truth. The score is "can a label generated only from train
+positives predict held-out activations?"
+
+![Held-out balanced accuracy for the 17 candidate persistent components, sorted by score. Random-label shuffle baseline shown as ×. Orange band: mean ± std balanced accuracy for 12 matched non-persistent control components (persistence < 0.3, similar mean activity). Violet bars: balanced accuracy ≥ 0.7. Green bars: 0.55–0.7. Grey bars: below 0.55.](../outputs/gate_geometry/autointerp_persistent/01_validation_scores.png)
+
+**Result.** Mean held-out balanced accuracy is **0.66**, vs **0.48
+for the random-label shuffle** and **0.41 for 12 matched
+non-persistent control components** (alive, mean gate matched,
+persistence < 0.3). None of the 12 control components reach
+balanced accuracy ≥ 0.7; six of the 17 persistent components do.
+The persistent population is interpretable above what same-density
+non-persistent components are.
+
+The strongest hits are independently labeled "mathematical
+expressions/operations/equations" by the LLM, on components from
+layers 0 and 3 and from three different module types:
+
+| component | label | held-out bal. acc. | random-label baseline | top token (fraction of positives) |
+| --- | --- | ---: | ---: | --- |
+| `h.0.attn.o_proj#722` | mathematical expressions | **0.983** | 0.350 | `'*'` (0.13) |
+| `h.3.attn.v_proj#457` | mathematical operations | **0.950** | 0.483 | `'*'` (0.10) |
+| `h.0.attn.o_proj#329` | equations and scientific content | **0.950** | 0.517 | `'car'` (0.04) |
+| `h.0.attn.o_proj#536` | political/parliamentary discourse | **0.833** | 0.500 | `'ų'` (0.06) |
+
+Token-identity baselines are uniformly small (top token shares
+≤ 13% of positives across these four), so the labels are not
+identifying single-token detectors.
+
+A typical positive snippet for `h.0.attn.o_proj#722` ("mathematical
+expressions"):
+
+> `Suppose 5*s + 179 + 91 = 0. Let m << = >> s + 54. Solve 2*f + 2*f + 12 = m for f.`
+
+A positive snippet for `h.0.attn.o_proj#536` ("political/parliamentary
+discourse" — the actual text is Lithuanian Europarl-style content
+about language rights in Northern Ireland):
+
+> `būtų sureguliuotos airiškai kalbančių Šiaurės Airijos gyventojų teisės. Pirmininkas Dėko<<ju>>.`
+
+The LLM does not see the language; it picks up on parliamentary
+register.
+
+**Caveats.** The bottom half of the table is close to chance, and a
+few low-confidence labels ("medical terminology focus", "contextual
+growth indicators") look like the LLM forcing a hypothesis on
+incoherent positives. The honest verdict is that the persistent
+subspace has a *non-trivial fraction* of cleanly labelable
+components (math context most prominently, parliamentary discourse
+secondarily), not that every persistent component is a feature. LLM
+labels are hypotheses, not ground truth, and these results do not
+imply causal mechanism without ablation tests.
+
+This is enough to claim: the geometric subpopulation isolated by
+Experiment 5 is not just statistical noise; the cleanest among them
+correspond to recognizable document-context categories that
+generalize on held-out data above random-label shuffle.
+
 ## Summary: what survived the controls?
 
 | claim | held up? |
@@ -324,6 +417,7 @@ token.
 | Different modules have wildly different gate geometries | Yes. $\sim 80\times$ range in effective rank across modules. |
 | Gate atoms are mostly persistent context variables | No. Mean persistence 0.11 vs mean baseline 0.02 (a real $\sim 6\times$ lift, but small in absolute terms); only 32 of 9,014 (0.4%) alive components reach persistence > 0.8. |
 | Adjacent tokens use roughly the same active set | Partly. Adjacent-pair Jaccard 0.156 vs random 0.067 ($2.3\times$ lift), but adjacent tokens still differ on ~85% of their active components. |
+| Persistent components label cleanly with held-out validation | Partly. Out of 17 candidate persistent components, 4 reach held-out balanced accuracy ≥ 0.8 with low token-identity baseline; 8 reach ≥ 0.6. Mean 0.66 vs random-label 0.48 and 0.41 for matched non-persistent components. Strongest hits are math-expression detectors. |
 
 ## What this suggests for VPD-style clustering
 

@@ -1,0 +1,16 @@
+{
+  "n_persistent": 32,
+  "n_selected": 32,
+  "n_control": 32,
+  "n_total_components": 64,
+  "n_train_pos": 40,
+  "n_heldout_pos": 30,
+  "n_heldout_neg": 30,
+  "persistence_threshold": 0.8,
+  "gate_threshold": 0.5,
+  "alive_threshold": 0.0001,
+  "context_left": 48,
+  "context_right": 24,
+  "tokenizer": "EleutherAI/gpt-neox-20b",
+  "cache_path": "outputs/gate_geometry/cache/pile4L_16x8x512.pt"
+}

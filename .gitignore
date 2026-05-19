@@ -13,3 +13,10 @@ outputs/**/*.pth
 outputs/**/*.bin
 outputs/**/*.npz
 outputs/**/*.npy
+# Autointerp internal artifacts: many small files, recreated by the pipeline.
+outputs/gate_geometry/autointerp_persistent/llm_cache/
+outputs/gate_geometry/autointerp_persistent/prompts/
+outputs/gate_geometry/autointerp_persistent/control/llm_cache/
+outputs/gate_geometry/autointerp_persistent/control/prompts/
+outputs/gate_geometry/autointerp_persistent/test3/
+outputs/gate_geometry/autointerp_persistent/dryrun/
