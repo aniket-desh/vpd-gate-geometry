@@ -39,8 +39,8 @@ PALETTE: dict[str, str] = {
     "ink":       "#2C2A35",   # primary text
     "muted":     "#6C6873",   # secondary text
     "axis":      "#C4BFB7",   # axis lines + spines
-    "grid":      "#E8E4DD",   # very subtle grid
-    "bg":        "#FAFAF6",   # warm off-white
+    "grid":      "#E8E8EC",   # very subtle cool-gray grid
+    "bg":        "#FFFFFF",   # pure white; matches LessWrong post canvas
 }
 
 # Diverging colormap matching the violet/orange accent pair.
