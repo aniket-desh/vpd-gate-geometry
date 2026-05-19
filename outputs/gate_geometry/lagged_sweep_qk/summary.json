@@ -1,5 +1,18 @@
 {
-  "provenance": {},
+  "provenance": {
+    "backend": "repo",
+    "run_path": "runs/pile-4L/model_400000.pth",
+    "target_model_path": "runs/pretrain-4L/files/model_step_99999.pt",
+    "dataset_name": "danbraunai/pile-uncopyrighted-tok-shuffled",
+    "dataset_split": "train",
+    "dataset_column": "input_ids",
+    "n_batches": 16,
+    "batch_size": 8,
+    "seq_len": 512,
+    "sampling": "continuous",
+    "seed": 0,
+    "source_note": "patched post-hoc; cache predates run_analysis.py provenance dict."
+  },
   "config": {
     "max_lag": 6,
     "top_k": 384,
