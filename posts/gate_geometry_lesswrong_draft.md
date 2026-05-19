@@ -58,57 +58,40 @@ that I think is worth writing down explicitly.
 
 ## VPD in the minimum necessary detail
 
-The target model is a 4-layer decoder-only Llama-MLP-only transformer
-with 6 attention heads, $n_\text{embd} = 768$, vocab 50,277, trained
-on an uncopyrighted Pile subset (Bushnaq et al., 2026). The
-decomposition lives over 24 weight matrices, with 38,912 rank-one
-subcomponents in total. About 9,972 of those are "alive" in the
-paper's reported sense (threshold $\bar g > 10^{-6}$).
+The target is Goodfire's canonical 4-layer Llama-MLP-only transformer
+trained on an uncopyrighted Pile subset. VPD decomposes 24 weight
+matrices into 38,912 rank-one subcomponents. For each subcomponent it
+learns a gate value $g^\ell_{b,t,c}\in[0,1]$, interpreted as how
+necessary component $c$ is at token position $(b,t)$ in layer or
+module $\ell$. The gate field is trained against a faithfulness
+constraint using both stochastic and adversarially selected ablation
+masks.
 
-For each subcomponent VPD trains a causal-importance value
-$g^\ell_{b,t,c}\in[0,1]$ which says how necessary that subcomponent is
-on token $(b,t)$ in layer/module $\ell$. The training minimizes
-importance subject to a faithfulness constraint that uses both
-stochastic and adversarially selected ablation masks. The key
-mechanistic interpretation, taken from the paper, is that
-$g \to 0$ means the subcomponent should be ablatable on that token
-without changing the model's output, and $g \to 1$ means it must be
-preserved.
-
-For the geometry analysis, the relevant fact is that $g$ is a
-high-dimensional sparse-ish $[B, T, C]$ tensor that can be flattened
-into a $[N, C]$ matrix where $N = B \cdot T$.
+For this post, the important fact is that these gates form a
+sparse-ish tensor that can be flattened into a matrix
+$G \in \mathbb{R}^{N \times C}$, with token instances as rows and
+parameter subcomponents as columns.
 
 ## The causal-importance field as a data object
 
-Flatten the gate dict across modules:
-$G \in \mathbb{R}^{N \times C}$, with $C = \sum_\ell C_\ell$ and
-each row being a token instance. In my main run, $N = 65{,}536$ token
-positions (16 batches of 8 sequences of 512 tokens, streamed from the
-canonical Pile dataset), and after restricting to alive components I
-work on the top-4,096 alive subset ranked by mean activity.
+In my main run, $N = 65{,}536$ token positions (16 batches × 8
+sequences × 512 tokens, streamed from the canonical Pile dataset).
+After restricting to alive components ($\bar g > 10^{-4}$) I work on
+the top-4,096 alive subset ranked by mean activity.
 
-The four probes are:
+The four probes:
 
-1. **Same-position spectral structure.** Eigenvalues and clustering
-   ordering of cosine, centered Pearson, and shuffled-null kernels on
-   the top-K alive matrix.
-2. **Token-identity residualization.** Per-component $R^2$ explained
-   by a per-token-id baseline, and the resulting residualized
-   spectrum.
-3. **Lagged co-importance.** Pearson $r$ between top-K components of
-   module $A$ at position $t$ and module $B$ at position $t + \tau$,
-   compared to a per-sequence circular-shift null on module $B$.
-4. **Per-(layer, module) spectra.** The same cosine kernel computed
-   separately for each of the 24 decomposed matrices.
+1. **Same-position spectral structure.** Spectra of cosine, centered Pearson, and shuffled-null kernels on the top-4,096 alive matrix.
+2. **Token-identity residualization.** Per-component $R^2$ against a per-token-id baseline.
+3. **Lagged co-importance.** Pearson $r$ between top-K components of module $A$ at position $t$ and module $B$ at $t + \tau$, against a per-sequence circular-shift null on $B$.
+4. **Per-(layer, module) spectra.** The same cosine kernel computed separately for each of the 24 decomposed matrices.
 
-All four are descriptive. None of them tells us what a component
-*does*; only how its causal-importance pattern relates to others.
+These are all proxies. They tell us how gate patterns relate, not
+what the components do.
 
 ## Experiment 1: same-position gate geometry
 
-The first natural object is the cosine kernel of the top-4,096 alive
-subset and its eigenspectrum. The raw numbers:
+I compare kernel variants on the top-4,096 alive components.
 
 | variant | top eigenvalue | 10th | effective rank |
 | --- | ---: | ---: | ---: |
@@ -117,113 +100,84 @@ subset and its eigenspectrum. The raw numbers:
 | token-residualized cosine | 143.1 | 30.6 | 1{,}292.6 |
 | shuffled-cosine null | **150.4** | 1.51 | 3{,}417.9 |
 
-![Spectrum of the top-4096 alive VPD components on three kernel variants and a shuffled null. The raw cosine and centered Pearson curves are nearly indistinguishable beyond their first eigenvalue; the null curve is flat beyond its own λ1 (≈150) and crosses above both real curves only deep in the tail.](../outputs/gate_geometry/pile4L_v2/plots/09_kernel_variants.png)
+![Eigenspectra of the top-4,096 alive VPD gates under three kernel variants and the column-wise row-shuffled null. Raw cosine and centered Pearson are nearly indistinguishable past the first eigenvalue; the null is flat above λ1 ≈ 150 and crosses both real curves only in the deep tail.](../outputs/gate_geometry/pile4L_v2/plots/09_kernel_variants.png)
 
-The same comparison is more visceral as a pair of heatmaps:
+![Real cosine kernel (left) and column-wise row-shuffled cosine kernel (right) on the top-4,096 alive components, plotted under the same row ordering, colormap, and colour scale. The dense upper-left block in the real panel disappears under the shuffled control.](../outputs/gate_geometry/pile4L_v2/plots/10_kernel_real_vs_null.png)
 
-![Real cosine kernel (left) and column-wise row-shuffled cosine kernel (right) on the top-4,096 alive components, plotted under the same row ordering, colormap, and colour scale. The dense upper-left block in the real panel disappears under the shuffled control. This is the same block the spectrum is diagnosing.](../outputs/gate_geometry/pile4L_v2/plots/10_kernel_real_vs_null.png)
-
-The left panel uses the spectral row ordering (sign of leading
-eigenvector, then second eigenvector) that surfaces the dominant
-mechanism cluster of $\sim 500\text{--}800$ components. The right
-panel applies the *same row ordering* to a column-wise row-shuffled
-copy of the gate matrix: each component column is independently
+The raw cosine top eigenvalue is 206. The same kernel on a
+column-wise row-shuffled $G$ (each component column independently
 re-shuffled along the row axis, preserving every per-component
-marginal histogram while destroying all cross-component
-co-activation. The block in the upper-left of the left panel is the
-structure; the absence of any analogous block in the right panel is
-the control.
+marginal but destroying all cross-component co-activation) reports
+150. The bare cosine $\lambda_1$ is therefore not evidence of
+mechanism structure; it is mostly the global "mean direction" of
+active components surviving shuffling. Centered Pearson removes that
+mean direction and reports the same $\approx 150$, only without the
+base-rate inflation.
 
-The plot says something subtle that the v1 cosine headline got wrong.
-The raw cosine kernel reports a top eigenvalue of 206. That looks
-impressive until you compute the same cosine kernel on the
-column-wise row-shuffled $G$, which destroys every cross-component
-co-activation while leaving the per-component distributions intact.
-The shuffled cosine kernel still has a top eigenvalue of 150. That's
-because the cosine kernel normalizes by per-column $L^2$ norm but
-not per-column mean, so the global "mean direction" of the active
-components survives row shuffling.
+What does matter is the *shape* of the spectrum. The shuffled null
+collapses to a near-flat $\sim 1.51$ for indices 2 through $\sim 4000$;
+real spectra drop smoothly over three decades. The first few hundred
+modes sit above the null and the bulk tail sits below it, which is
+the signature of a kernel that concentrates variance in the top few
+hundred eigenvectors.
 
-The honest claim is the **centered Pearson** top eigenvalue ($\approx 150$),
-and even more importantly, the *shape* of the spectrum. Beyond the
-first eigenvalue, the shuffled null collapses to roughly $1.51$ for
-all subsequent indices (entries 2 through $\sim 4000$). The real
-spectrum drops smoothly over three decades. The first few hundred
-modes sit visibly above the null; the tail crosses below it. That
-crossover is the signature of a structured kernel that concentrates
-variance in the top eigenvectors at the expense of the bulk.
-
-So the H1 claim survives the null in its weaker form: VPD gates have
-real spectral structure on the top-K alive subset, concentrated in
-roughly the leading few hundred modes of the *centered* kernel.
+So the real claim is not "the raw cosine kernel has a huge top
+eigenvalue"; it is "the centered gate kernel has a structured leading
+spectrum above a shuffled null."
 
 ## Experiment 2: token identity is real, but not the whole story
 
-How much of the same gate matrix is explained by token identity alone?
-I fit a per-token-id baseline (with shrinkage for rare tokens) on the
-top-K alive subset:
-$g_{b,t,c} \approx \mu_c + a_{z(b,t),c}$,
-and look at the per-component $R^2$.
+How much of the top-4,096 gate matrix is explained by token identity
+alone? I fit a per-token-id baseline (with shrinkage for rare tokens):
+$g_{b,t,c} \approx \mu_c + a_{z(b,t),c}$, and look at per-component
+$R^2$.
 
-![Histogram of per-component R² explained by token identity on the top-4096 alive subset. Median 0.06, with a bimodal-with-tail shape: a primary mode at R² ≤ 0.1, a secondary mode at 0.15-0.30, and a long tail past 0.7.](../outputs/gate_geometry/pile4L_v2/plots/05_token_r2.png)
+![Histogram of per-component R² explained by token identity on the top-4,096 alive subset. Median 0.06, bimodal-with-tail: a primary mode at R² ≤ 0.10, a secondary mode at 0.15-0.30, and a long tail past 0.7.](../outputs/gate_geometry/pile4L_v2/plots/05_token_r2.png)
 
-Numbers:
-
-- Effective vocab with at least 16 occurrences: 522.
-- Median per-component $R^2 = 0.059$.
-- Mean $R^2 = 0.129$.
+- Effective vocab with ≥ 16 occurrences: 522.
+- Median per-component $R^2 = 0.059$; mean $R^2 = 0.129$.
 - Top eigenvalue after token residualization: 143.1 (vs. raw cosine 206.1).
 
-The histogram is bimodal-with-tail. Most components live near $R^2 = 0.05$:
-their gate fields are not primarily token-identity driven. A
-secondary mode at $0.15$ to $0.30$ is partly token-bound (these are
-components that fire reliably on a few token types but also carry
-context). The long tail past $R^2 > 0.7$ is the lexical population I
-would expect VPD-style "support" components to live in.
+The histogram has a primary mode at $R^2 \le 0.10$ (contextual
+components), a secondary mode at 0.15-0.30 (partially token-bound),
+and a long tail past 0.7 that I read as the VPD-style "support"
+population. But residualization barely moves the spectrum beyond
+what centering alone already does: residualized $\lambda_1 = 143$
+sits very close to Pearson's 151, so most of what token
+residualization "removes" is the same mean alignment that centered
+Pearson already removes.
 
-Critically, residualization barely moves the bulk of the spectrum
-beyond what *centering alone* already does (compare residualized top
-eigval 143 to Pearson 151). Most of what residualization "removes" is
-the same mean alignment that the centered Pearson kernel already
-removes. The verdict on H2 is therefore mixed: token identity is a
-real and stratifying axis, but not the dominant geometric story of
-the gate field at this scale.
+Token identity is therefore a useful stratifier, not the main
+explanation. It surfaces a lexical tail; most of the top-4,096 gate
+geometry survives both centering and token residualization.
 
 ## Experiment 3: lagged co-importance and why max statistics fooled me
 
-This is the experiment that I got wrong the first time, and the
-correction is the most useful part of this writeup.
+This is the experiment I got wrong the first time. The correction is
+the most useful thing in the writeup.
 
 For each pair of modules $(A, B)$ I compute the Pearson correlation
 between top-384 components of $A$ at position $t$ and top-384
-components of $B$ at position $t + \tau$, for $\tau \in [-6, 6]$.
-That gives a $384 \times 384$ correlation matrix per lag.
+components of $B$ at $t + \tau$, for $\tau \in [-6, 6]$. That gives
+a $384 \times 384$ correlation matrix per lag.
 
-### The v1 attempt
+**The v1 mistake.** I summarized each lag's correlation matrix by its
+**maximum absolute entry**. Across all four same-layer Q→K pairs the
+max |r| peaked at $\tau \in \{-2, -3\}$, and I wrote down a story
+about deeper layers reaching further back. With 147,456 component
+pairs per lag, the maximum of the heavy tail saturates near 1.0 for
+many lags, including ones whose bulk is indistinguishable from null.
+Max |r| is fine for finding an illustrative pair; it is not a
+summary statistic for whether one lag is heavier than another.
 
-I summarized each lag's correlation matrix by its **maximum absolute
-entry**. That looked like a sharp result: across all four same-layer
-Q→K pairs, the max |r| peaked at $\tau \in \{-2, -3\}$. I wrote
-down a story about deeper layers reaching further back. That story
-did not survive the first null control.
+**The fix.** I switched to **mean of the top-100 |r|** per lag, and
+added a per-sequence circular-shift null on module $B$ (six
+independent shuffles per pair). The null preserves $B$'s
+within-sequence marginal histogram and autocorrelation but breaks
+every cross-module position alignment, so comparing real to null is
+well-posed.
 
-The problem: with 147,456 component pairs at each lag, the maximum of
-the heavy tail saturates near 1.0 for *many* lags, including ones
-that the rest of the distribution is indistinguishable from null. Max
-|r| is fine for finding a single illustrative pair. It is not a
-summary statistic for whether the distribution at one lag is heavier
-than at another.
-
-### The fix
-
-I switched to a less fragile statistic, the **mean of the top-100
-|r|** at each lag, and added a per-sequence circular-shift null on
-module $B$ (six independent shuffles per pair). Under that null,
-module $B$'s within-sequence marginal histogram and autocorrelation
-are preserved, but every cross-module position alignment is broken.
-Comparing real |r| to null is then a well-posed question.
-
-![L2 Q→K lagged co-importance (full module names: `h.2.attn.q_proj → h.2.attn.k_proj`). The green line is mean of top-100 |r|; the dotted gray line is max |r| over all 147k pairs at each lag; the gray band is the per-sequence circular-shift null distribution (mean to 95th percentile across 6 shuffles). Negative τ means the key gate is earlier than the query gate. The real signal rises above null only for τ ∈ {−1, 0, +1, +2}.](../outputs/gate_geometry/pile4L_v2/plots/07_lag_profile.png)
+![L2 Q→K lagged co-importance. The green line is mean of top-100 |r|; the dotted gray line is max |r| over all 147,456 pairs at each lag; the gray band is the per-sequence circular-shift null distribution (mean to 95th percentile across 6 shuffles). Negative τ means the key gate is earlier than the query gate. The real signal sits above null only for τ ∈ {−1, 0, +1, +2}.](../outputs/gate_geometry/pile4L_v2/plots/07_lag_profile.png)
 
 The corrected within-layer Q→K results:
 
@@ -234,40 +188,39 @@ The corrected within-layer Q→K results:
 | L2 q → k |  **0** | 0.246 | 0.103 | +0.143 |
 | L3 q → k | **−1** | 0.357 | 0.091 | **+0.265** |
 
-For three of the four layers the peak is at $\tau = -1$, not $\tau = 0$.
-That direction is consistent with the mechanistic reading: the query
-gate at destination position $t$ couples maximally with the key gate
-at the previous source position $t - 1$, i.e. one-token-back attention.
-L2 is the exception and peaks at $\tau = 0$ (same-token coupling).
+Three of four layers peak at $\tau = -1$, not $\tau = 0$. That is
+consistent with the reading that the query gate at destination
+position $t$ couples maximally with the key gate one position
+earlier; I want to call this "one-token-back Q/K gate coupling"
+rather than "one-token-back attention," since we are still talking
+about gate-field correlation, not attribution. L2 peaks at $\tau = 0$.
 
-![L0 within-layer Q→K lagged profile (full module names: `h.0.attn.q_proj → h.0.attn.k_proj`). Sharp asymmetric peak at τ = −1 with neighbours at τ = 0 and τ = −2; collapses into the circular-shift null band by τ = +1. Negative τ means the key gate is earlier than the query gate.](../outputs/gate_geometry/lagged_sweep_qk/h_0_attn_q_proj__h_0_attn_k_proj__lag_profile.png)
+![L0 within-layer Q→K lagged profile. Sharp asymmetric peak at τ = −1 with neighbours at τ = 0 and τ = −2; collapses into the circular-shift null band by τ = +1. Negative τ means the key gate is earlier than the query gate.](../outputs/gate_geometry/lagged_sweep_qk/h_0_attn_q_proj__h_0_attn_k_proj__lag_profile.png)
 
-Past $\tau = \pm 2$, every same-layer Q→K pair drops into the
-null band. Anything I previously read off the $\tau \in \{-3, -6\}$
+Past $\tau = \pm 2$ every same-layer Q→K pair drops into the null
+band, and anything I previously read off the $\tau \in \{-3, -6\}$
 end of the curve was the heavy tail talking, not real cross-position
 coupling.
-
-So the methodological lesson, stated bluntly:
 
 > Max |r| over hundreds of thousands of component pairs is an
 > attractive nuisance. It is good for finding examples; it is not a
 > summary statistic.
 
-I'm writing this out at length because I think it's a trap that's
-easy to walk into for anyone analyzing VPD gates (or, frankly, any
-high-dimensional activation matrix) without an explicit null. The
-green line in the figure above is the one I would actually defend.
+I'm writing this at length because it is a trap that is easy to walk
+into for anyone analyzing VPD gates (or any high-dimensional
+activation matrix) without an explicit null. The green line in the
+figure above is the one I would actually defend.
 
 ## Experiment 4: per-(layer, module) geometry
 
-This is the most robust observation, in the sense that no
+This is the most robust descriptive result in the post; no
 extreme-value statistic is involved.
 
-For each of the 24 decomposed matrices I compute its own cosine kernel
-on its alive components (capped at 1,024 per module, with the same
+For each of the 24 decomposed matrices I compute its own cosine
+kernel on its alive components (capped at 1,024 per module, same
 $\bar g > 10^{-4}$ threshold). The full table is in
 [`docs/results.md`](https://github.com/aniket-desh/vpd-gate-geometry/blob/main/docs/results.md);
-the highlights:
+highlights:
 
 | layer × module | alive | effective rank | participation ratio |
 | --- | ---: | ---: | ---: |
@@ -281,81 +234,66 @@ the highlights:
 | **L3 mlp.down** | **1,837** | **433.8** | 103.7 |
 
 L1 attention is the standout: 46 alive components in `attn.k_proj`
-that together occupy roughly 5.5 effective dimensions, and only 10
-alive in `attn.q_proj` at 7.0 effective dimensions. The gate field
-assigns L1 attention a tiny effective-dimensional budget; whether
-that reflects a small set of mechanisms or a vestigial subspace is
-a question for ablations, not for this descriptive probe. L3
-`mlp.down` is the opposite shape: a wide, redundant 1,837-component
-dictionary in $\sim 434$ effective dimensions.
+occupying 5.5 effective dimensions, only 10 alive in `attn.q_proj`
+at 7.0 effective dimensions. The gate field assigns L1 attention a
+tiny effective-dimensional budget. L3 `mlp.down` is the opposite
+shape: a wide, redundant 1,837-component dictionary in $\sim 434$
+effective dimensions.
 
-The L1-vs-L3 axis spans roughly two orders of magnitude in effective
-rank within the same model and decomposition. H4 from the project
-plan ("different modules have different gate geometries") is
-strongly supported by this descriptive statistic, and unlike H3 it
-does not need any null discipline to defend.
+The L1-to-L3 axis spans roughly two orders of magnitude in effective
+rank within the same decomposition. Module geometries genuinely do
+differ this much; that conclusion does not need null discipline.
 
-## What survived the null controls?
-
-A simple table:
+## Summary: what survived the controls?
 
 | claim | held up? |
 | --- | --- |
-| Raw cosine kernel has real spectral structure | Partly. The cosine $\lambda_1$ is half-driven by base-rate alignment; the leading $\sim 500$ modes of the centered Pearson kernel are above the shuffled null. |
-| Token identity is the dominant geometric axis | No. Median $R^2 = 0.06$. There's a lexical tail; most components are not primarily token-bound. |
-| Q/K coupling reaches back two or three tokens | No. Real signal collapses to within the null band past $\tau = \pm 2$. |
-| Q/K coupling is one-token-back in most layers | Yes, with excess of $+0.27$ to $+0.61$ over null p95 in L0/L1/L3. L2 peaks at $\tau = 0$. |
-| Different modules have wildly different gate geometries | Yes. $\sim 80\times$ range in effective rank across modules in the same decomposition, no statistical games involved. |
+| Raw cosine kernel has real spectral structure | Partly. Cosine $\lambda_1$ is half base-rate alignment; the leading $\sim 500$ centered-Pearson modes are above the shuffled null. |
+| Token identity is the dominant geometric axis | No. Median $R^2 = 0.06$; lexical tail only. |
+| Q/K coupling reaches back two or three tokens | No. Signal collapses into the null band past $\tau = \pm 2$. |
+| Q/K coupling is one-token-back in most layers | Yes. Excess +0.27 to +0.61 over null p95 in L0/L1/L3; L2 peaks at $\tau = 0$. |
+| Different modules have wildly different gate geometries | Yes. $\sim 80\times$ range in effective rank across modules. |
 
 ## What this suggests for VPD-style clustering
 
-I want to be careful not to oversell this. The post is descriptive,
-not prescriptive. But three things follow that I think are worth
-noting.
+Three clustering-relevant lessons seem worth taking seriously, with
+the caveat that these are still descriptive proxies.
 
-First, if a future VPD-clustering pipeline uses cosine kernels on
-gates as a similarity, the leading component of that similarity is
-partly shared base rate. Switching to centered Pearson is essentially
-free and removes the inflation.
+**Use centered Pearson, not raw cosine, as similarity.** A future
+VPD-clustering pipeline that uses cosine on gates is reading off a
+similarity whose leading direction is partly shared base rate.
+Switching is essentially free and removes the inflation.
 
-Second, the same-position vs cross-position story for attention Q/K
-is real but narrow. Pairs that show coupling at $\tau = 0$ vs
-$\tau = -1$ in three of four layers are not a "global cross-position
-circuit" story; they're a "Q/K are tied to attention head structure"
-story. For a clustering method that wants to group Q and K into the
-same mechanism, this is actually good news: the relevant offset is
-small and consistent within a layer.
+**Q/K offsets are local, not global.** The cross-position story for
+within-layer Q/K is real but narrow: three of four layers couple at
+$\tau = -1$, one at $\tau = 0$, nothing past $\tau = \pm 2$. A
+clustering method that wants to group Q and K into the same
+mechanism should use a small, fixed within-layer offset, not a
+search over long-range lags.
 
-Third, the L1 attention modules occupying $\sim 7$ effective
-dimensions deserves a follow-up. Either L1 attention does very little
-useful work and the alive components are largely vestigial, or it
-does a very concentrated piece of work and a tiny number of
-mechanisms suffice. Autointerp labels on the L1 alive components
-would distinguish these.
+**L1 attention is a good follow-up target.** The L1 attention
+modules occupy $\sim 7$ effective dimensions, which is striking.
+Either these alive components implement a small concentrated
+behavior, or the decomposition has allocated a low-dimensional
+residual subspace there. Autointerp labels on the L1 alive
+components would distinguish these.
 
 ## Limitations
 
-This is a descriptive note. It does not establish what any component
-does. In particular:
-
-- Co-importance is not causal attribution. Two components that
-  consistently fire on the same tokens may belong to the same
-  mechanism, but they may also be independently triggered by the
-  same lexical or syntactic feature, or be redundant copies, or be
-  causally upstream/downstream rather than co-located.
-- The kernel-level analyses (sections 1, 2, 3) all live on the
-  top-4,096 alive subset, ranked by mean activity. They are not
-  about all 38,912 atoms.
-- The sample is 65,536 token positions from the canonical Pile
-  stream. That's enough to bring the alive-count and per-layer
-  proportions within 10% of the paper, but not the full training
-  distribution.
+- Co-importance is not causal attribution. Components that fire on
+  the same tokens may share a mechanism, but they may equally be
+  triggered by the same lexical or syntactic feature, be redundant
+  copies, or be upstream/downstream of each other.
+- The kernel-level analyses live on the top-4,096 alive subset
+  (ranked by mean activity), not all 38,912 atoms.
+- The sample is 65,536 token positions from the Pile stream. That
+  brings alive-counts within 10% of the paper's per-layer
+  proportions, but it is not the full training distribution.
 - The lagged null uses 6 circular-shift runs per pair. Enough to
   catch the v1 max-fishing error and to establish the $\tau = -1$
-  signal in L0/L1/L3, but not enough for a final p-value style
-  analysis.
-- No cluster ablations were run. No autointerp labels or attribution
-  graphs were used. No comparison to CLT/PLT
+  signal in L0/L1/L3, not enough for a final p-value style analysis.
+- No cluster ablations, no autointerp labels, no attribution graphs,
+  no comparison to CLT/PLT
   ([Bussmann's `nn_decompositions@vpd_paper`](https://github.com/bartbussmann/nn_decompositions/tree/vpd_paper))
   or activation-space baselines.
 
@@ -363,39 +301,60 @@ does. In particular:
 
 In rough order of how interesting they look from the current data:
 
-1. **Bilinear gate features.** The natural next step is to compute
-   pairwise products $g_{b,t,c}\,g_{b,t,c'}$ and look for low-rank
-   quadratic structure, in the spirit of bilinear autoencoders
+1. **Bilinear gate features.** Compute pairwise products
+   $g_{b,t,c}\,g_{b,t,c'}$ and look for low-rank quadratic
+   structure, in the spirit of bilinear autoencoders
    ([Dooms & Gauderis, 2025](https://arxiv.org/abs/2510.16820);
-   [project page](https://tdooms.github.io/research/bae/)).
-   The "L0 Q→K coupling at $\tau = -1$" result is exactly the
-   kind of pairwise structure such a method could surface
-   automatically.
+   [project page](https://tdooms.github.io/research/bae/)). The
+   L0 Q→K coupling at $\tau = -1$ is exactly the kind of pairwise
+   structure such a method could surface automatically.
 2. **Cluster-level case study.** Pick one of the dense blocks from
    the cosine-kernel heatmap and run autointerp on its members.
-   This is the qualitative companion to the spectral picture.
-3. **Compare to CLT/PLT gates on the same model.** The Bussmann fork
-   provides matched decompositions; the analogous spectrum and lag
-   profile would tell us whether what we see here is VPD-specific
-   or generic to any rank-one parameter-decomposition method.
-4. **Larger lag range.** The current $\tau \in [-6, 6]$ window may
-   miss longer-range Q/K coupling that's genuinely there but was
-   not visible in 6 lags either side of zero.
+3. **CLT/PLT comparison.** The Bussmann fork provides matched
+   decompositions; the same spectrum and lag profile would tell us
+   whether what we see is VPD-specific or generic to rank-one
+   parameter decompositions.
+4. **Robustness checks over sequence length and lag window.** I
+   would want to verify that the small upticks at $\tau \in \{+5, +6\}$
+   visible in some pairs are window artifacts rather than real
+   long-range structure. This is a check on the current conclusion,
+   not a hint that I expect hidden signal.
 
 ## Reproducibility
 
+| | |
+| --- | --- |
+| canonical run | `wandb:goodfire/spd/runs/s-55ea3f9b` |
+| target model | `wandb:goodfire/spd/runs/t-9d2b8f02` |
+| decomposition | 4-layer Llama-MLP-only, 24 matrices, 38,912 rank-one atoms |
+| dataset | `danbraunai/pile-uncopyrighted-tok-shuffled` (streaming) |
+| sample | 16 batches × 8 sequences × 512 tokens = 65,536 token positions |
+| alive threshold | $\bar g > 10^{-4}$ |
+| kernel subset | top-4,096 alive components by mean activity |
+| lagged top-K | 512 (main run); 384 (Q/K sweep) |
+| null | per-sequence circular shift of module $B$, 6 independent runs |
+| hardware | single NVIDIA H200, 144 GB VRAM |
+
+Full per-module table and per-pair lag profiles in
+[`docs/results.md`](https://github.com/aniket-desh/vpd-gate-geometry/blob/main/docs/results.md)
+and
+[`outputs/gate_geometry/`](https://github.com/aniket-desh/vpd-gate-geometry/tree/main/outputs/gate_geometry).
+
+<details>
+<summary>Exact reproduction command</summary>
+
 ```bash
-# 1. Clone scaffold + setup
+# Clone scaffold + upstream
 git clone https://github.com/aniket-desh/vpd-gate-geometry.git
 cd vpd-gate-geometry
 git clone --depth 1 https://github.com/goodfire-ai/param-decomp.git external/param-decomp
 cd external/param-decomp && uv sync && cd ../..
 
-# 2. Download canonical VPD model + target LM from public W&B GCS
-#    (the goodfire/spd project is USER_READ, no API key required).
-#    See docs/repo_readiness_report.md for the exact GraphQL queries.
+# Download canonical VPD model + target LM from public W&B GCS
+# (the goodfire/spd project is USER_READ, no API key required;
+# see docs/repo_readiness_report.md for the exact GraphQL queries).
 
-# 3. Run the main analysis with null controls
+# Run the main analysis with null controls
 external/param-decomp/.venv/bin/python -m vpd_gate_geometry.run_analysis \
     --backend repo \
     --run-path runs/pile-4L/model_400000.pth \
@@ -409,40 +368,20 @@ external/param-decomp/.venv/bin/python -m vpd_gate_geometry.run_analysis \
     --n-null-runs 6 --null-kind circular \
     --device cuda
 ```
-
-Concrete configuration used for the numbers in this post:
-
-| | |
-| --- | --- |
-| canonical run | `wandb:goodfire/spd/runs/s-55ea3f9b` |
-| target model | `wandb:goodfire/spd/runs/t-9d2b8f02` |
-| decomposition | 4-layer Llama-MLP-only, 24 matrices, 38,912 rank-one atoms |
-| dataset | `danbraunai/pile-uncopyrighted-tok-shuffled` (streaming) |
-| sample | 16 batches × 8 sequences × 512 tokens = 65,536 token positions |
-| alive threshold | $\bar g > 10^{-4}$ |
-| kernel subset | top-4,096 alive components ranked by mean activity |
-| lagged top-K | 512 (main run); 384 (Q/K sweep) |
-| null | per-sequence circular shift of module $B$, 6 independent runs |
-| hardware | single NVIDIA H200, 144 GB VRAM |
-
-The full quantitative table including all 24 modules and the QK
-sweep results lives in
-[`docs/results.md`](https://github.com/aniket-desh/vpd-gate-geometry/blob/main/docs/results.md);
-the per-module spectra and lag profiles for each pair are in
-[`outputs/gate_geometry/`](https://github.com/aniket-desh/vpd-gate-geometry/tree/main/outputs/gate_geometry).
+</details>
 
 ## Acknowledgments and citations
 
 Goodfire's VPD paper is the central object this post depends on
 (Bushnaq, Braun, Clive-Griffin, Bussmann, Hu, Ivanitskiy, Linsefors,
-Sharkey, 2026: [paper](https://www.goodfire.ai/research/interpreting-lm-parameters),
+Sharkey, 2026:
+[paper](https://www.goodfire.ai/research/interpreting-lm-parameters),
 [code](https://github.com/goodfire-ai/param-decomp)). The framing of
 parameter decomposition as the right object for mechanistic
-interpretability comes from the SPD/APD lineage
-([Bushnaq, Braun, Sharkey, 2025](https://arxiv.org/abs/2506.20790)).
-The pairwise / bilinear extension I gesture at in Future Work follows
-the bilinear MLP and bilinear autoencoder line of work
-([Pearce et al., 2025](https://arxiv.org/abs/2410.08417);
+interpretability comes from the SPD/APD lineage ([Bushnaq, Braun,
+Sharkey, 2025](https://arxiv.org/abs/2506.20790)). The pairwise /
+bilinear extension I gesture at in Future Work follows the bilinear
+MLP and bilinear autoencoder line of work ([Pearce et al., 2025](https://arxiv.org/abs/2410.08417);
 [Dooms & Gauderis, 2025](https://arxiv.org/abs/2510.16820)).
 
 Thanks to whoever reads this and tells me what's wrong with it.
