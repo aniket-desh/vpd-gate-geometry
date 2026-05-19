@@ -233,20 +233,11 @@ extreme-value statistic is involved.
 
 For each of the 24 decomposed matrices I compute its own cosine
 kernel on its alive components (capped at 1,024 per module, same
-$\bar g > 10^{-4}$ threshold). The full table is in
-[`docs/results.md`](https://github.com/aniket-desh/vpd-gate-geometry/blob/main/docs/results.md);
-highlights:
+$\bar g > 10^{-4}$ threshold). The full per-module table is in
+[`docs/results.md`](https://github.com/aniket-desh/vpd-gate-geometry/blob/main/docs/results.md).
+A single picture summarizes the 24 modules:
 
-| layer × module | alive | effective rank | participation ratio |
-| --- | ---: | ---: | ---: |
-| **L1 attn.k** | 46 | **5.5** | **2.8** |
-| **L1 attn.q** | 10 | 7.0 | 5.4 |
-| L1 attn.v | 209 | 39.5 | 8.6 |
-| L2 attn.o | 522 | 320.7 | 146.4 |
-| L2 attn.v | 481 | 245.6 | 96.7 |
-| L0 mlp.down | 1,092 | 487.7 | 202.1 |
-| L3 mlp.c_fc | 1,018 | 526.4 | 219.9 |
-| **L3 mlp.down** | **1,837** | **433.8** | 103.7 |
+![Per-(layer, module) gate geometry on the canonical 4L Llama-MLP VPD run. Each point is one of the 24 decomposed matrices; x is the number of alive components, y is the effective rank of its cosine kernel. Dotted diagonal is eff. rank = alive. Color encodes the module type, the small annotation gives the layer. The L1 attn.q (10, 7) and L1 attn.k (46, 5.5) modules sit by themselves in the lower-left "tiny effective budget" corner; the L0 / L3 mlp.down and L3 mlp.c_fc modules anchor the upper-right "wide, redundant dictionary" corner.](../outputs/gate_geometry/per_layer/00_module_geometry_scatter.png)
 
 L1 attention is the standout: 46 alive components in `attn.k_proj`
 occupying 5.5 effective dimensions, only 10 alive in `attn.q_proj`
