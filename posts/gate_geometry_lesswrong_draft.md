@@ -5,39 +5,31 @@ at the geometry of when those subcomponents are causally important.*
 
 TL;DR:
 
-- VPD ([Bushnaq et al., 2026](https://www.goodfire.ai/research/interpreting-lm-parameters))
-  produces a causal-importance gate field $g^\ell_{b,t,c}\in[0,1]$. I
-  treat that field as a geometric object on its own.
-- The cosine co-importance kernel on the top-4,096 alive components
-  has visible structure beyond a shuffled null, but the leading
-  cosine eigenvalue is partly shared-base-rate alignment. Centered
-  Pearson is the cleaner headline statistic.
-- Token identity explains a modest slice (median per-component
-  $R^2 = 0.06$, mean 0.13) with a clear lexical tail.
-- Within-layer Q/K coupling is real and *narrow*: in three of four
-  layers the mean-top-100 |r| peaks at $\tau = -1$ (the query gate
-  at position $t$ couples with the key gate one position earlier).
-  L2 peaks at $\tau = 0$.
-- Past $\tau = \pm 2$, every layer collapses into the circular-shift
-  null. The longer-range "Q reaches back several tokens" story from
-  the v1 draft did not survive that null.
-- Module geometries vary by roughly two orders of magnitude in
-  effective rank within the same decomposition: L1 `attn.k_proj`
-  lives in $\sim 5.5$ effective dimensions, L3 `mlp.down_proj` in
-  $\sim 434$.
-- The gate tensor is mostly token-local. At threshold $g > 0.5$, the
-  median alive component has implied on-run length 1.06 tokens, and
-  only 32 of 9,014 alive components have persistence > 0.8. Adjacent
-  tokens share more support than random pairs (Jaccard 0.156 vs
-  0.067), but almost every token still has a distinct active-set
-  signature.
-- The candidate persistent subspace (17 components after filtering
-  out always-on ones) contains some interpretable features.
-  `gpt-4o-mini`-generated labels predict held-out gate activations
-  with mean balanced accuracy **0.66**, vs **0.48** under random-label
-  shuffle and **0.41** for matched non-persistent components. The
-  strongest hits are math-expression detectors across three modules
-  in layers 0 and 3.
+- **Gate kernels have real centered spectral structure beyond
+  shuffled nulls.** Raw cosine $\lambda_1$ is partly base-rate
+  alignment, so centered Pearson is the cleaner headline (top eigval
+  151 vs shuffled null 150, leading $\sim 500$ modes separate from
+  null on a top-4,096 alive subset).
+- **Token identity is modest, not dominant.** Median per-component
+  $R^2 = 0.06$, mean 0.13, with a lexical tail.
+- **Within-layer Q/K coupling is narrow and local, and my v1
+  draft was fooled by max statistics.** Using null-controlled
+  mean-top-100 $|r|$, three of four layers peak at $\tau = -1$ and
+  one at $\tau = 0$; past $\tau = \pm 2$ every layer collapses into
+  the per-sequence circular-shift null. Earlier longer-range claims
+  did not survive the null and have been corrected.
+- **The gate tensor is mostly token-local, with a tiny persistent
+  subspace.** Median on-run length 1.06 tokens, only 32 of 9,014
+  alive components have persistence > 0.8, and 99.5% of token
+  positions have a distinct active-set signature (adjacent-vs-random
+  Jaccard 0.156 vs 0.067).
+- **The persistent subspace has some interpretable components,
+  validated above matched controls.** 17 candidate persistent
+  components after filtering out always-on ones. `gpt-4o-mini`
+  labels predict held-out gate activations with mean balanced
+  accuracy **0.66**, vs **0.48** random-label shuffle and **0.41**
+  for matched non-persistent components. Strongest hits are
+  math-context detectors across three modules in layers 0 and 3.
 
 ![Cosine kernel on the top-4,096 alive VPD components (left) compared to a column-wise row-shuffled null (right) that preserves each component's marginal distribution but destroys all cross-component co-activation. Both panels share the same row ordering, colormap, and colour scale; the dense upper-left block in the real panel is visibly absent on the right.](../outputs/gate_geometry/pile4L_v2/plots/10_kernel_real_vs_null.png)
 
@@ -62,12 +54,16 @@ important at different token positions.) That's a natural invitation
 to look at the gate field itself as a data matrix, and to ask what
 geometry it actually contains.
 
-I do not run ablations, autointerp, or attribution graphs here. The
-contribution is descriptive: same-position co-importance kernels,
-token-identity residualization, lagged co-importance with null
-controls, and per-(layer, module) geometry. The first version of this
-project also taught me a methodological lesson about max statistics
-that I think is worth writing down explicitly.
+I do not run causal ablations or attribution graphs here. The
+contribution is mostly descriptive: same-position co-importance
+kernels, token-identity residualization, lagged co-importance with
+null controls, per-(layer, module) geometry, and temporal /
+row-pattern structure. The final section is a small autointerp-style
+case study on 17 candidate persistent components, used as a
+semantic-validation probe of the geometry rather than as a search
+for new features. The first version of this project also taught me
+a methodological lesson about max statistics that I think is worth
+writing down explicitly.
 
 ## VPD in the minimum necessary detail
 
@@ -92,15 +88,19 @@ sequences × 512 tokens, streamed from the canonical Pile dataset).
 After restricting to alive components ($\bar g > 10^{-4}$) I work on
 the top-4,096 alive subset ranked by mean activity.
 
-The four probes:
+The six probes:
 
 1. **Same-position spectral structure.** Spectra of cosine, centered Pearson, and shuffled-null kernels on the top-4,096 alive matrix.
 2. **Token-identity residualization.** Per-component $R^2$ against a per-token-id baseline.
 3. **Lagged co-importance.** Pearson $r$ between top-K components of module $A$ at position $t$ and module $B$ at $t + \tau$, against a per-sequence circular-shift null on $B$.
 4. **Per-(layer, module) spectra.** The same cosine kernel computed separately for each of the 24 decomposed matrices.
+5. **Temporal / row-pattern structure.** Per-component persistence at lag 1, plus active-set Jaccard for adjacent vs random row pairs.
+6. **Autointerp validation on persistent components.** LLM-generated hypothesis + held-out classification on the small subspace surfaced by probe 5.
 
-These are all proxies. They tell us how gate patterns relate, not
-what the components do.
+Probes 1-5 are descriptive: they tell us how gate patterns relate,
+not what the components do. Probe 6 is a small semantic check that
+asks whether the geometric subpopulation surfaced by probe 5
+corresponds to recognizable contexts.
 
 ## Experiment 1: same-position gate geometry
 
@@ -329,10 +329,11 @@ components correspond to interpretable contexts, and do
 LLM-generated hypotheses predict held-out gate activations above
 chance?
 
-**Selection.** I take alive components with persistence > 0.8 and
-*excess persistence* (persistence − marginal density) > 0.5. The
-excess filter drops "always-on" components whose persistence is
-trivially high because their density is. That leaves **17 candidate
+**Selection.** Experiment 5 finds 32 alive components with
+persistence > 0.8. For autointerp I further require *excess
+persistence* $p_{\text{persist}} - p_{\text{on}} > 0.5$, which drops
+the always-on subset (components whose persistence is trivially
+high because they fire on most tokens). That leaves **17 candidate
 persistent components** spanning all four layers.
 
 **Pipeline.** For each component:
@@ -352,15 +353,15 @@ The LLM is used as a hypothesis generator + classifier, not as
 ground truth. The score is "can a label generated only from train
 positives predict held-out activations?"
 
-![Held-out balanced accuracy for the 17 candidate persistent components, sorted by score. Random-label shuffle baseline shown as ×. Orange band: mean ± std balanced accuracy for 12 matched non-persistent control components (persistence < 0.3, similar mean activity). Violet bars: balanced accuracy ≥ 0.7. Green bars: 0.55–0.7. Grey bars: below 0.55.](../outputs/gate_geometry/autointerp_persistent/01_validation_scores.png)
+![Held-out balanced accuracy for the 17 candidate persistent components, sorted by score. Random-label shuffle baseline shown as ×. Orange band: mean ± std balanced accuracy for 12 matched non-persistent control components (persistence < 0.3, similar mean activity). Violet bars: balanced accuracy ≥ 0.7. Green bars: 0.55-0.7. Grey bars: below 0.55.](../outputs/gate_geometry/autointerp_persistent/01_validation_scores.png)
 
 **Result.** Mean held-out balanced accuracy is **0.66**, vs **0.48
 for the random-label shuffle** and **0.41 for 12 matched
 non-persistent control components** (alive, mean gate matched,
 persistence < 0.3). None of the 12 control components reach
 balanced accuracy ≥ 0.7; six of the 17 persistent components do.
-The persistent population is interpretable above what same-density
-non-persistent components are.
+In this small sample, the high-excess persistent components were
+substantially more labelable than matched non-persistent controls.
 
 The strongest hits are independently labeled "mathematical
 expressions/operations/equations" by the LLM, on components from
@@ -383,7 +384,7 @@ expressions"):
 > `Suppose 5*s + 179 + 91 = 0. Let m << = >> s + 54. Solve 2*f + 2*f + 12 = m for f.`
 
 A positive snippet for `h.0.attn.o_proj#536` ("political/parliamentary
-discourse" — the actual text is Lithuanian Europarl-style content
+discourse"; the actual text is Lithuanian Europarl-style content
 about language rights in Northern Ireland):
 
 > `būtų sureguliuotos airiškai kalbančių Šiaurės Airijos gyventojų teisės. Pirmininkas Dėko<<ju>>.`
@@ -396,15 +397,21 @@ few low-confidence labels ("medical terminology focus", "contextual
 growth indicators") look like the LLM forcing a hypothesis on
 incoherent positives. The honest verdict is that the persistent
 subspace has a *non-trivial fraction* of cleanly labelable
-components (math context most prominently, parliamentary discourse
-secondarily), not that every persistent component is a feature. LLM
-labels are hypotheses, not ground truth, and these results do not
-imply causal mechanism without ablation tests.
+components (math-context most prominently, parliamentary discourse
+secondarily), not that every persistent component corresponds to a
+feature. LLM labels are hypotheses, not ground truth; the
+match-on-token negative pool is also not maximally hard (a stricter
+version would use same-token and same-document hard negatives
+throughout); and an above-random held-out classification score does
+not imply that the component *implements* the hypothesised concept,
+which would need causal ablation. I treat "math-context detectors"
+as the language of these labels, not "math-context mechanisms".
 
 This is enough to claim: the geometric subpopulation isolated by
 Experiment 5 is not just statistical noise; the cleanest among them
 correspond to recognizable document-context categories that
-generalize on held-out data above random-label shuffle.
+generalize on held-out data above both random-label shuffle and
+matched non-persistent components.
 
 ## Summary: what survived the controls?
 
@@ -457,10 +464,16 @@ components would distinguish these.
 - The lagged null uses 6 circular-shift runs per pair. Enough to
   catch the v1 max-fishing error and to establish the $\tau = -1$
   signal in L0/L1/L3, not enough for a final p-value style analysis.
-- No cluster ablations, no autointerp labels, no attribution graphs,
-  no comparison to CLT/PLT
+- No causal ablations, no attribution graphs, no comparison to
+  CLT/PLT
   ([Bussmann's `nn_decompositions@vpd_paper`](https://github.com/bartbussmann/nn_decompositions/tree/vpd_paper))
-  or activation-space baselines.
+  or activation-space baselines. The autointerp validation in
+  Experiment 6 is small (17 persistent components, a single LLM
+  pair of prompts, held-out classification) and uses LLM judgments
+  rather than causal intervention; it can show that a
+  natural-language hypothesis predicts gate activation, but not
+  that the component implements that concept. I did not autointerp
+  the main spectral clusters or the Q/K lagged pairs.
 
 ## Future work
 
@@ -471,11 +484,14 @@ components would distinguish these.
    [project page](https://tdooms.github.io/research/bae/)). The
    L0 Q→K coupling at $\tau = -1$ is exactly the kind of pairwise
    structure such a method could surface automatically.
-2. **Persistent-component case study.** Autointerp the 32 alive
-   components with persistence > 0.8 and the densest block from the
-   cosine-kernel heatmap. These are two qualitatively different
-   populations that the kernel and temporal views agree are worth
-   inspecting.
+2. **Causal validation of the persistent labels.** Ablate the
+   top math-context components (e.g. `h.0.attn.o_proj#722`,
+   `h.3.attn.v_proj#457`) on the held-out positive vs negative
+   snippets and measure KL / loss change against the original
+   model, with a matched-random-component control. The current
+   autointerp result says the *label predicts gate activation*;
+   the causal version would say the *gate causally matters on
+   matching contexts*.
 3. **CLT/PLT comparison.** The Bussmann fork provides matched
    decompositions; the same spectrum, lag profile, and persistence
    distribution would tell us whether what we see is VPD-specific or
