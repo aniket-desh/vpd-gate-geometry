@@ -11,6 +11,30 @@ below reflects the re-rendered state.
 
 ---
 
+## 0. `outputs/gate_geometry/pile4L_v2/plots/10_kernel_real_vs_null.png`  ★ tactile evidence
+
+**Intended caption.** *Cosine kernel on the top-4,096 alive VPD
+components (left) and on a row+column-shuffled version of the same
+gate matrix (right). Both panels use the same vmin/vmax, the same
+diverging colormap, and the same row ordering (sign-of-leading-eigvec
+spectral order on the real kernel). The dense block in the upper-left
+of the real panel is the same block that the spectrum and effective
+rank diagnose; it is visibly absent from the shuffled-null panel.*
+
+| check | status |
+| --- | --- |
+| labels readable | yes |
+| legend overlap | n/a |
+| clipping | no |
+| contrast | yes; soft-lavender midpoint keeps zero-correlation cells distinct from the warm bg, while the dense block reads as a clear orange patch |
+| communicates one point | yes: "the block structure isn't an artifact of cosine on positive sparse data; the shuffled control kills it" |
+
+Verdict: **include as the headline visual.** This is what the
+spectrum plot was claiming verbally; this plot makes that claim
+visceral in one figure.
+
+---
+
 ## 1. `outputs/gate_geometry/pile4L_v2/plots/09_kernel_variants.png`  ★ headline
 
 **Intended caption.** *Top-4,096 alive VPD gate eigenspectra: raw

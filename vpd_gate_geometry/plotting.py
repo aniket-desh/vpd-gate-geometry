@@ -174,6 +174,52 @@ def plot_spectrum(
     save_close(fig, out_path)
 
 
+def plot_kernel_real_vs_null(
+    K_real: torch.Tensor,
+    K_null: torch.Tensor,
+    out_path: Path,
+    order: torch.Tensor | None = None,
+    title: str = "Cosine kernel: real vs shuffled null",
+    real_label: str = "real",
+    null_label: str = "shuffled null",
+    vmax: float | None = None,
+) -> None:
+    """Side-by-side heatmap of real and null kernels under a shared ordering.
+
+    Both panels share `order`, `vmin`, `vmax`, and `cmap` so the comparison
+    is on identical visual scale. The point of this figure is that whatever
+    block structure the `order` permutation makes visible in the real
+    panel should be visibly absent in the null panel.
+    """
+    real = _to_np(K_real)
+    null = _to_np(K_null)
+    if order is not None:
+        idx = _to_np(order)
+        real = real[np.ix_(idx, idx)]
+        null = null[np.ix_(idx, idx)]
+    if vmax is None:
+        vmax = float(np.percentile(np.abs(real), 99.0)) + 1e-9
+
+    fig, axes = plt.subplots(
+        1, 2, figsize=(9.6, 4.6),
+        sharex=True, sharey=True,
+        gridspec_kw={"wspace": 0.06},
+    )
+    for ax, arr, panel_label in zip(axes, (real, null), (real_label, null_label), strict=True):
+        im = ax.imshow(
+            arr, cmap=DIVERGING_CMAP, vmin=-vmax, vmax=vmax,
+            interpolation="nearest", aspect="equal",
+        )
+        ax.set_title(panel_label, fontsize=11, color=PALETTE["ink"], loc="center")
+        ax.set_xlabel("component  (reordered)")
+    axes[0].set_ylabel("component  (reordered)")
+    cb = fig.colorbar(im, ax=axes, fraction=0.025, pad=0.025)
+    cb.outline.set_visible(False)
+    cb.ax.tick_params(colors=PALETTE["muted"], labelsize=9)
+    fig.suptitle(title, fontsize=13, color=PALETTE["ink"], weight="semibold", x=0.05, ha="left")
+    save_close(fig, out_path)
+
+
 def plot_kernel_heatmap(
     K: torch.Tensor,
     out_path: Path,

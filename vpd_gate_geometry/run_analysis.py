@@ -347,6 +347,15 @@ def run(cfg: AnalysisConfig) -> dict[str, Any]:
                 "shuffled null": "null",
             },
         )
+        # Side-by-side real-vs-null kernel heatmaps under the same row order
+        # — the dense block in the real panel should be visibly absent
+        # in the null panel.
+        plotting.plot_kernel_real_vs_null(
+            K_raw, K_shuf,
+            plot_dir / "10_kernel_real_vs_null.png",
+            order=order,
+            title="Cosine kernel: real vs shuffled null  (same component ordering)",
+        )
 
     print(f"[vpd-gate-geometry] wrote summary -> {out / 'summary.json'}", flush=True)
     if not cfg.skip_plots:

@@ -94,6 +94,7 @@ def test_pipeline_end_to_end_mock(tmp_path: Path) -> None:
         "07_lag_profile.png",
         "08_top_lagged_pairs.png",
         "09_kernel_variants.png",
+        "10_kernel_real_vs_null.png",
     }
     for name in expected:
         p = plot_dir / name

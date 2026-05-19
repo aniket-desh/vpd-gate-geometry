@@ -27,6 +27,8 @@ TL;DR:
   rank within the same decomposition: L1 `attn.k_proj` lives in $\sim 5.5$
   effective dimensions, L3 `mlp.down_proj` in $\sim 434$.
 
+![Real cosine kernel on top-4096 alive VPD components (left) compared to the same kernel under a row+column shuffle that destroys cross-row alignment (right), under shared ordering and colour scale. The dense upper-left block in the real panel is visibly absent on the right.](../outputs/gate_geometry/pile4L_v2/plots/10_kernel_real_vs_null.png)
+
 Code, data, and full numbers:
 [github.com/aniket-desh/vpd-gate-geometry](https://github.com/aniket-desh/vpd-gate-geometry).
 Authoritative results: [`docs/results.md`](https://github.com/aniket-desh/vpd-gate-geometry/blob/main/docs/results.md).
@@ -117,6 +119,19 @@ subset and its eigenspectrum. The raw numbers:
 | shuffled-cosine null | **150.4** | 1.51 | 3{,}417.9 |
 
 ![Spectrum of the top-4096 alive VPD components on three kernel variants and a shuffled null. The raw cosine and centered Pearson curves are nearly indistinguishable beyond their first eigenvalue; the null curve is flat beyond its own λ1 (≈150) and crosses above both real curves only deep in the tail.](../outputs/gate_geometry/pile4L_v2/plots/09_kernel_variants.png)
+
+The same comparison is more visceral as a pair of heatmaps:
+
+![Real cosine kernel (left) and shuffled-null cosine kernel (right) on the top-4096 alive components, under the same row ordering and colour scale. The dense block in the upper-left of the real panel survives the shuffled control, which destroys all cross-row alignment. This is the same block the spectrum was diagnosing.](../outputs/gate_geometry/pile4L_v2/plots/10_kernel_real_vs_null.png)
+
+The left panel uses the spectral row ordering (sign of leading
+eigenvector, then second eigenvector) that surfaces the dominant
+mechanism cluster of $\sim 500\text{--}800$ components. The right
+panel applies the *same row ordering* to the row+column-shuffled
+gate matrix, which preserves each component's marginal histogram
+but breaks every cross-row coupling. The block in the upper-left
+of the left panel is the structure; the lack of any analogous block
+in the right panel is the control.
 
 The plot says something subtle that the v1 cosine headline got wrong.
 The raw cosine kernel reports a top eigenvalue of 206. That looks
