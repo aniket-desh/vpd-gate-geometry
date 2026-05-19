@@ -103,7 +103,7 @@ def main(argv: list[str] | None = None) -> int:
         ax.set_yscale("symlog", linthresh=1e-4)
         ax.set_xlabel("eigenvalue index")
         ax.set_ylabel("eigenvalue")
-        ax.set_title(f"Layer {layer}: per-module cosine spectrum")
+        plotting._set_title(ax, f"Layer {layer}: per-module cosine spectrum")
         ax.legend(fontsize=8, ncol=2)
         plotting.save_close(fig, args.output_dir / f"layer_{layer}_spectra.png")
 
@@ -118,7 +118,7 @@ def main(argv: list[str] | None = None) -> int:
         ax.set_yscale("symlog", linthresh=1e-4)
         ax.set_xlabel("eigenvalue index")
         ax.set_ylabel("eigenvalue")
-        ax.set_title(f"{mod_type}: spectrum across layers")
+        plotting._set_title(ax, f"{mod_type}: spectrum across layers")
         ax.legend(fontsize=8)
         plotting.save_close(
             fig, args.output_dir / f"module_{mod_type.replace('.', '_')}_across_layers.png"

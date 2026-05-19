@@ -70,6 +70,21 @@ def _preferred_font() -> str:
     return "DejaVu Sans"
 
 
+def _preferred_title_font() -> str:
+    """Pick a softer, more editorial face for plot titles.
+
+    Sans-serif body + serif title is a common research-blog pattern
+    (e.g. Goodfire research posts). DejaVu Serif is the safe fallback
+    that ships with matplotlib's default font stack.
+    """
+    available = {f.name for f in fm.fontManager.ttflist}
+    for cand in ("Source Serif Pro", "Source Serif 4", "IBM Plex Serif",
+                 "Charter", "Georgia", "PT Serif", "DejaVu Serif"):
+        if cand in available:
+            return cand
+    return _preferred_font()
+
+
 GOODFIRE_RC: dict[str, object] = {
     "figure.dpi": 140,
     "savefig.dpi": 240,
@@ -82,10 +97,10 @@ GOODFIRE_RC: dict[str, object] = {
     "axes.spines.right": False,
     "axes.labelcolor":   PALETTE["ink"],
     "axes.labelsize":    10.5,
-    "axes.titlesize":    13,
-    "axes.titleweight":  "semibold",
+    "axes.titlesize":    12.5,
+    "axes.titleweight":  "regular",
     "axes.titlecolor":   PALETTE["ink"],
-    "axes.titlepad":     10,
+    "axes.titlepad":     12,
     "axes.titlelocation": "left",
     "axes.grid":         True,
     "axes.axisbelow":    True,
@@ -109,7 +124,38 @@ GOODFIRE_RC: dict[str, object] = {
 
 def set_style() -> None:
     plt.rcParams["font.family"] = _preferred_font()
+    # Put the preferred serif first in the serif stack so that any
+    # plot helper that wants an editorial title face can just call
+    # `ax.set_title(..., family="serif")` and pick it up automatically.
+    serif = _preferred_title_font()
+    plt.rcParams["font.serif"] = [serif] + plt.rcParams.get("font.serif", [])
     plt.rcParams.update(GOODFIRE_RC)
+
+
+# Title styling shared by every plot helper. Editorial serif when one is
+# available, regular weight, ink colour, left-aligned, with breathing room.
+_TITLE_KW: dict[str, object] = {
+    "family": "serif",
+    "weight": "regular",
+    "color": PALETTE["ink"],
+    "loc": "left",
+    "pad": 12,
+}
+_SUPTITLE_KW: dict[str, object] = {
+    "family": "serif",
+    "weight": "regular",
+    "color": PALETTE["ink"],
+    "x": 0.06,
+    "ha": "left",
+}
+
+
+def _set_title(ax, text: str, fontsize: float = 13) -> None:
+    ax.set_title(text, fontsize=fontsize, **_TITLE_KW)
+
+
+def _suptitle(fig, text: str, fontsize: float = 13.5) -> None:
+    fig.suptitle(text, fontsize=fontsize, **_SUPTITLE_KW)
 
 
 def _to_np(t: torch.Tensor) -> np.ndarray:
@@ -130,7 +176,7 @@ def plot_gate_activity_histogram(mean_per_component: torch.Tensor, out_path: Pat
     ax.set_yscale("log")
     ax.set_xlabel("mean causal importance per component (g̅)")
     ax.set_ylabel("# components  (log scale)")
-    ax.set_title("Component activity")
+    _set_title(ax, "Component activity")
     ax.margins(x=0)
     save_close(fig, out_path)
 
@@ -162,7 +208,7 @@ def plot_spectrum(
         ax.legend(loc="upper right", borderpad=0.4)
     ax.set_xlabel("eigenvalue index")
     ax.set_ylabel("eigenvalue")
-    ax.set_title(title)
+    _set_title(ax, title)
     ax.set_yscale("symlog", linthresh=1e-4)
     if annotation:
         ax.text(
@@ -210,13 +256,16 @@ def plot_kernel_real_vs_null(
             arr, cmap=DIVERGING_CMAP, vmin=-vmax, vmax=vmax,
             interpolation="nearest", aspect="equal",
         )
-        ax.set_title(panel_label, fontsize=11, color=PALETTE["ink"], loc="center")
+        ax.set_title(
+            panel_label, fontsize=11, family="serif", weight="regular",
+            color=PALETTE["muted"], loc="center",
+        )
         ax.set_xlabel("component  (reordered)")
     axes[0].set_ylabel("component  (reordered)")
     cb = fig.colorbar(im, ax=axes, fraction=0.025, pad=0.025)
     cb.outline.set_visible(False)
     cb.ax.tick_params(colors=PALETTE["muted"], labelsize=9)
-    fig.suptitle(title, fontsize=13, color=PALETTE["ink"], weight="semibold", x=0.05, ha="left")
+    _suptitle(fig, title)
     save_close(fig, out_path)
 
 
@@ -236,7 +285,7 @@ def plot_kernel_heatmap(
     fig, ax = plt.subplots(figsize=(5.4, 4.8))
     im = ax.imshow(arr, cmap=DIVERGING_CMAP, vmin=-vmax, vmax=vmax,
                    interpolation="nearest", aspect="auto")
-    ax.set_title(title)
+    _set_title(ax, title)
     ax.set_xlabel("component  (reordered)")
     ax.set_ylabel("component  (reordered)")
     cb = fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
@@ -274,7 +323,7 @@ def plot_spectral_embedding(
         cb.ax.tick_params(colors=PALETTE["muted"], labelsize=9)
     ax.set_xlabel("e₁")
     ax.set_ylabel("e₂")
-    ax.set_title(title)
+    _set_title(ax, title)
     save_close(fig, out_path)
 
 
@@ -289,7 +338,7 @@ def plot_token_r2_histogram(r2: torch.Tensor, out_path: Path) -> None:
             color=PALETTE["ink"], fontsize=9.5, ha="left", va="top")
     ax.set_xlabel("R²  explained by token identity  (per component)")
     ax.set_ylabel("# components")
-    ax.set_title("Token-identity explained variance")
+    _set_title(ax, "Token-identity explained variance")
     ax.margins(x=0)
     save_close(fig, out_path)
 
@@ -305,7 +354,7 @@ def plot_spectrum_raw_vs_residual(
     ax.set_yscale("symlog", linthresh=1e-4)
     ax.set_xlabel("eigenvalue index")
     ax.set_ylabel("eigenvalue")
-    ax.set_title("Raw vs token-residualized spectrum")
+    _set_title(ax, "Raw vs token-residualized spectrum")
     ax.legend(loc="upper right", borderpad=0.4)
     save_close(fig, out_path)
 
@@ -330,7 +379,7 @@ def plot_lag_profile(
     )
     ax.set_xlabel("lag τ  (positions B − positions A)")
     ax.set_ylabel(label)
-    ax.set_title("Lagged co-importance profile")
+    _set_title(ax, "Lagged co-importance profile")
     save_close(fig, out_path)
 
 
@@ -385,7 +434,7 @@ def plot_lag_profile_with_null(
     ax.axvline(0, color=PALETTE["muted"], lw=0.7, linestyle=":", zorder=2)
     ax.set_xlabel("lag τ  (positions B − positions A)")
     ax.set_ylabel("|r|")
-    ax.set_title(title)
+    _set_title(ax, title)
     ax.legend(loc="upper right", borderpad=0.4)
     save_close(fig, out_path)
 
@@ -438,5 +487,5 @@ def plot_top_lagged_pair_heatmap(
     ax.invert_yaxis()
     ax.axvline(0, color=PALETTE["axis"], lw=0.7, zorder=1)
     ax.set_xlabel("signed |r| at best τ  (max statistic, see caveat)")
-    ax.set_title(f"Top {n} lagged component pairs")
+    _set_title(ax, f"Top {n} lagged component pairs")
     save_close(fig, out_path)
