@@ -15,7 +15,7 @@ TL;DR:
 - Token identity explains a modest slice (median per-component
   $R^2 = 0.06$, mean 0.13) with a clear lexical tail.
 - Within-layer Q/K coupling is real and *narrow*: in three of four
-  layers the mean-top-100 $|r|$ peaks at $\tau = -1$ (the query gate
+  layers the mean-top-100 |r| peaks at $\tau = -1$ (the query gate
   at position $t$ couples with the key gate one position earlier).
   L2 peaks at $\tau = 0$.
 - Past $\tau = \pm 2$, every layer collapses into the circular-shift
@@ -203,36 +203,36 @@ That gives a $384 \times 384$ correlation matrix per lag.
 
 I summarized each lag's correlation matrix by its **maximum absolute
 entry**. That looked like a sharp result: across all four same-layer
-Q$\to$K pairs, the max $|r|$ peaked at $\tau \in \{-2, -3\}$. I wrote
+Q→K pairs, the max |r| peaked at $\tau \in \{-2, -3\}$. I wrote
 down a story about deeper layers reaching further back. That story
 did not survive the first null control.
 
 The problem: with 147,456 component pairs at each lag, the maximum of
 the heavy tail saturates near 1.0 for *many* lags, including ones
 that the rest of the distribution is indistinguishable from null. Max
-$|r|$ is fine for finding a single illustrative pair. It is not a
+|r| is fine for finding a single illustrative pair. It is not a
 summary statistic for whether the distribution at one lag is heavier
 than at another.
 
 ### The fix
 
 I switched to a less fragile statistic, the **mean of the top-100
-$|r|$** at each lag, and added a per-sequence circular-shift null on
+|r|** at each lag, and added a per-sequence circular-shift null on
 module $B$ (six independent shuffles per pair). Under that null,
 module $B$'s within-sequence marginal histogram and autocorrelation
 are preserved, but every cross-module position alignment is broken.
-Comparing real $|r|$ to null is then a well-posed question.
+Comparing real |r| to null is then a well-posed question.
 
 ![L2 Q→K lagged co-importance (full module names: `h.2.attn.q_proj → h.2.attn.k_proj`). The green line is mean of top-100 |r|; the dotted gray line is max |r| over all 147k pairs at each lag; the gray band is the per-sequence circular-shift null distribution (mean to 95th percentile across 6 shuffles). Negative τ means the key gate is earlier than the query gate. The real signal rises above null only for τ ∈ {−1, 0, +1, +2}.](../outputs/gate_geometry/pile4L_v2/plots/07_lag_profile.png)
 
-The corrected within-layer Q$\to$K results:
+The corrected within-layer Q→K results:
 
-| pair | $\tau$ at peak (mean top-100) | mean top-100 $|r|$ | null p95 | excess |
+| pair | τ at peak (mean top-100) | mean top-100 \|r\| | null p95 | excess |
 | --- | :---: | ---: | ---: | ---: |
-| L0  q → k | **−1** | 0.689 | 0.083 | **+0.607** |
-| L1  q → k | **−1** | 0.393 | 0.046 | **+0.347** |
-| L2  q → k | **0**  | 0.246 | 0.103 | +0.143 |
-| L3  q → k | **−1** | 0.357 | 0.091 | **+0.265** |
+| L0 q → k | **−1** | 0.689 | 0.083 | **+0.607** |
+| L1 q → k | **−1** | 0.393 | 0.046 | **+0.347** |
+| L2 q → k |  **0** | 0.246 | 0.103 | +0.143 |
+| L3 q → k | **−1** | 0.357 | 0.091 | **+0.265** |
 
 For three of the four layers the peak is at $\tau = -1$, not $\tau = 0$.
 That direction is consistent with the mechanistic reading: the query
@@ -242,14 +242,14 @@ L2 is the exception and peaks at $\tau = 0$ (same-token coupling).
 
 ![L0 within-layer Q→K lagged profile (full module names: `h.0.attn.q_proj → h.0.attn.k_proj`). Sharp asymmetric peak at τ = −1 with neighbours at τ = 0 and τ = −2; collapses into the circular-shift null band by τ = +1. Negative τ means the key gate is earlier than the query gate.](../outputs/gate_geometry/lagged_sweep_qk/h_0_attn_q_proj__h_0_attn_k_proj__lag_profile.png)
 
-Past $\tau = \pm 2$, every same-layer Q$\to$K pair drops into the
+Past $\tau = \pm 2$, every same-layer Q→K pair drops into the
 null band. Anything I previously read off the $\tau \in \{-3, -6\}$
 end of the curve was the heavy tail talking, not real cross-position
 coupling.
 
 So the methodological lesson, stated bluntly:
 
-> Max $|r|$ over hundreds of thousands of component pairs is an
+> Max |r| over hundreds of thousands of component pairs is an
 > attractive nuisance. It is good for finding examples; it is not a
 > summary statistic.
 
@@ -368,7 +368,7 @@ In rough order of how interesting they look from the current data:
    quadratic structure, in the spirit of bilinear autoencoders
    ([Dooms & Gauderis, 2025](https://arxiv.org/abs/2510.16820);
    [project page](https://tdooms.github.io/research/bae/)).
-   The "L0 Q$\to$K coupling at $\tau = -1$" result is exactly the
+   The "L0 Q→K coupling at $\tau = -1$" result is exactly the
    kind of pairwise structure such a method could surface
    automatically.
 2. **Cluster-level case study.** Pick one of the dense blocks from
