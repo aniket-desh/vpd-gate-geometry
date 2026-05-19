@@ -1,0 +1,24 @@
+{
+  "config": {
+    "threshold": 0.5,
+    "alive_threshold": 0.0001,
+    "n_sequences": 128,
+    "total_rows": 65536,
+    "T_pairs": 65408
+  },
+  "totals": {
+    "C": 38912,
+    "alive": 9014,
+    "mean_persistence_alive": 0.10626704869160411,
+    "median_persistence_alive": 0.054285714285714284,
+    "p95_persistence_alive": 0.40875815117743663,
+    "mean_baseline_alive": 0.016537632676643623,
+    "median_run_len_alive": 1.0574018126888218,
+    "mean_run_len_alive": 1.2219982670576497,
+    "p95_run_len_alive": 1.6913552766019562,
+    "n_persistence_above_0_3": 842,
+    "n_persistence_above_0_5": 244,
+    "n_persistence_above_0_8": 32,
+    "n_persistence_above_0_95": 6
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "config": {
+    "threshold": 0.5,
+    "alive_only": true,
+    "alive_threshold": 0.0001,
+    "C_eff": 9014,
+    "N": 65536,
+    "avg_L0_per_row": 149.07022094726562,
+    "n_random_pairs": 20000,
+    "n_adjacent_pairs": 20000
+  },
+  "patterns": {
+    "n_unique_patterns": 65211,
+    "frac_unique": 0.9950408935546875,
+    "n_singletons": 65013,
+    "frac_singletons": 0.9920196533203125,
+    "max_pattern_freq": 11,
+    "top8_pattern_freqs": [
+      11,
+      9,
+      8,
+      7,
+      7,
+      6,
+      6,
+      5
+    ],
+    "n_patterns_covering_50pct_of_rows": 32443
+  },
+  "jaccard": {
+    "adjacent_mean": 0.15632287675574144,
+    "adjacent_median": 0.13448649861620166,
+    "adjacent_p95": 0.3221335200746965,
+    "random_mean": 0.0671819646350716,
+    "random_median": 0.056708724419141404,
+    "random_p95": 0.13960306460306457,
+    "adjacent_over_random_mean_ratio": 2.3268577750721926
+  }
+}

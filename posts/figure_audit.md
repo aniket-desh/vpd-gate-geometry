@@ -201,6 +201,52 @@ diagnostic of why max is the wrong headline.
 
 ---
 
+---
+
+## 9. `outputs/gate_geometry/temporal/02_persistence_vs_density.png`
+
+**Intended caption.** *Per-component persistence
+$P(\text{on at } t{+}1 \mid \text{on at } t)$ vs marginal density
+$P(\text{on})$ on a log-x axis, one point per alive component.
+Most components hug the independence diagonal (persistence = density),
+which means they fire as single-token triggers. A small cluster of
+~32 components sits well above the diagonal, behaving as persistent
+context state.*
+
+| check | status |
+| --- | --- |
+| labels readable | yes |
+| legend overlap | no (legend in lower right) |
+| clipping | no |
+| contrast | yes; sequential lavender colormap with ink edges on each point |
+| communicates one point | yes: "VPD atoms are dominantly single-token triggers, not context state" |
+
+Verdict: **include**; supports the temporal-persistence claim in
+Experiment 5.
+
+---
+
+## 10. `outputs/gate_geometry/row_patterns/02_jaccard_adjacent_vs_random.png`
+
+**Intended caption.** *Jaccard similarity of active sets. Random row
+pairs (grey) cluster near 0.07; within-sequence adjacent pairs
+$(t, t{+}1)$ (violet) cluster near 0.16. Dashed lines mark the two
+means. Adjacent tokens are 2.3× more similar than random pairs but
+still share only ~15% of their active components.*
+
+| check | status |
+| --- | --- |
+| labels readable | yes |
+| legend overlap | no |
+| clipping | no |
+| contrast | yes; two clearly separated distributions |
+| communicates one point | yes: "locally smooth, but every token is essentially a fresh pattern" |
+
+Verdict: **include**; supports the row-pattern-vocabulary claim in
+Experiment 5.
+
+---
+
 ## TODO / outstanding visual concerns
 
 - The `per_layer/layer_2_spectra.png` legend partly overlaps the top

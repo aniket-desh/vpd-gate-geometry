@@ -26,7 +26,7 @@ from typing import Any
 import torch
 
 from . import gate_matrix as gm_mod
-from . import plotting, residualize, spectral, lagged
+from . import cache_io, plotting, residualize, spectral, lagged
 from .config import AnalysisConfig, config_from_argv
 from .extract_gates import iter_gate_batches
 
@@ -50,15 +50,17 @@ def run(cfg: AnalysisConfig) -> dict[str, Any]:
 
     provenance: dict[str, Any] = {}
     if cfg.load_gate_matrix:
-        cached = torch.load(cfg.load_gate_matrix, weights_only=False)
-        gm = cached["gm"]
-        modules = cached["modules"]
-        provenance = cached.get("provenance") or {
-            "n_batches": cached.get("n_batches"),
+        gm, meta = cache_io.load_gate_matrix_cache(cfg.load_gate_matrix)
+        modules = meta["modules"]
+        provenance = meta["provenance"] or {
             "backend": "unknown (cache had no provenance dict)",
         }
-        print(f"[vpd-gate-geometry] loaded cached gate matrix from "
-              f"{cfg.load_gate_matrix} G={tuple(gm.G.shape)}", flush=True)
+        print(
+            f"[vpd-gate-geometry] loaded cached gate matrix from "
+            f"{cfg.load_gate_matrix} ({meta.get('format', 'unknown')}) "
+            f"G={tuple(gm.G.shape)}",
+            flush=True,
+        )
     else:
         batches = list(iter_gate_batches(cfg))
         assert batches, "no batches yielded by backend"
@@ -82,14 +84,17 @@ def run(cfg: AnalysisConfig) -> dict[str, Any]:
         print(f"[vpd-gate-geometry] gate matrix: G={tuple(gm.G.shape)} "
               f"N_rows={gm.n_rows} C_total={gm.n_components}", flush=True)
         if cfg.cache_gate_matrix:
-            from pathlib import Path as _P
-            _P(cfg.cache_gate_matrix).parent.mkdir(parents=True, exist_ok=True)
-            torch.save(
-                {"gm": gm, "modules": modules, "provenance": provenance},
-                cfg.cache_gate_matrix,
+            stats = cache_io.save_gate_matrix_cache(
+                gm, modules, cfg.cache_gate_matrix, provenance=provenance,
             )
-            print(f"[vpd-gate-geometry] cached gate matrix -> "
-                  f"{cfg.cache_gate_matrix}", flush=True)
+            print(
+                f"[vpd-gate-geometry] cached sparse gate matrix -> "
+                f"{cfg.cache_gate_matrix}  "
+                f"(nnz={stats['nnz']:,}, density={stats['density']*100:.3f}%, "
+                f"{stats['file_size_mb']:.1f} MB, "
+                f"{stats['compression_ratio_vs_dense_fp32']:.0f}x vs dense)",
+                flush=True,
+            )
 
     # Stage onto GPU once; analysis stays on GPU until the small final stats.
     use_cuda = cfg.device == "cuda" and torch.cuda.is_available()

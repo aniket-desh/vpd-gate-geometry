@@ -18,7 +18,7 @@ from pathlib import Path
 
 import torch
 
-from . import gate_matrix as gm_mod
+from . import cache_io, gate_matrix as gm_mod
 from . import plotting, spectral
 from .plotting import PALETTE
 
@@ -39,9 +39,8 @@ def main(argv: list[str] | None = None) -> int:
     args = p.parse_args(argv)
 
     print(f"[per_layer] loading {args.cache} ...", flush=True)
-    cached = torch.load(args.cache, weights_only=False)
-    gm = cached["gm"]
-    modules = cached["modules"]
+    gm, meta = cache_io.load_gate_matrix_cache(args.cache)
+    modules = meta["modules"]
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
     plotting.set_style()

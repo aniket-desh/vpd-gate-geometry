@@ -33,8 +33,7 @@ from pathlib import Path
 
 import torch
 
-from . import lagged
-from . import plotting
+from . import cache_io, lagged, plotting
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -54,11 +53,14 @@ def main(argv: list[str] | None = None) -> int:
     args = p.parse_args(argv)
 
     print(f"[sweep] loading cache {args.cache} ...", flush=True)
-    cached = torch.load(args.cache, weights_only=False)
-    gm = cached["gm"]
-    modules = cached["modules"]
-    provenance = cached.get("provenance", {})
-    print(f"[sweep] gate matrix: G={tuple(gm.G.shape)} modules={len(modules)}", flush=True)
+    gm, meta = cache_io.load_gate_matrix_cache(args.cache)
+    modules = meta["modules"]
+    provenance = meta["provenance"]
+    print(
+        f"[sweep] gate matrix: G={tuple(gm.G.shape)} modules={len(modules)} "
+        f"format={meta.get('format', 'unknown')}",
+        flush=True,
+    )
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
     plotting.set_style()
