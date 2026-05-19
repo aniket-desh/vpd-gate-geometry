@@ -1,6 +1,6 @@
 # vpd-gate-geometry
 
-[Blogpost: The Gate Geometry of Parameter Decompositions](TODO: LessWrong link)
+[Blogpost: Gate Geometry of Parameter Decompositions](TODO: LessWrong link)
 
 A geometric look at the causal-importance gate field `g[layer, batch, token, component] ∈ [0,1]` from Goodfire's [VPD / param-decomp](https://github.com/goodfire-ai/param-decomp). Not a reimplementation — a small analysis pipeline that treats `g` as a first-class data object.
 
