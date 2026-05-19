@@ -14,8 +14,7 @@ Three backends:
 - `repo`     : live `ComponentModel.calc_causal_importances` on a
                trained VPD run. Requires `param_decomp` to be importable
                and `WANDB_API_KEY` to be set if the run path points at
-               wandb. See `docs/repo_readiness_report.md` for the exact
-               call chain.
+               wandb.
 - `artifact` : load `component_correlations.pt` and `token_stats.pt`
                from a finished harvest sub-run. Sufficient for the
                same-position kernel + token residualization, but cannot
